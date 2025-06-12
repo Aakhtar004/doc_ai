@@ -1,0 +1,35 @@
+name: Semgrep Analysis and GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep scan
+        run: |
+          semgrep scan \
+            --config="p/default" \
+            --json \
+            --output semgrep.json \
+            --include server.cjs \
+            --include api.mjs \
+            --include config/supabase.js \
+            --include routes/ \
+            --include services/ \
+            --include public/js/
+      - name: Generate HTML report
+        run: prospector-html --input semgrep.json --output semgrep-report.html --filter semgrep
+      - name: Upload HTML Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          folder: ./
+          target_branch: gh-pages
+          keep_files: true
