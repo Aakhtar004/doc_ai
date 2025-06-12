@@ -1,0 +1,97 @@
+name: Snyk Security Analysis
+env:
+  NODE_VERSION: '18.x'                    # Versión de Node.js del proyecto
+on: 
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  security:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Snyk
+        uses: snyk/actions/setup@master
+
+      - name: Install snyk-to-html
+        run: npm install -g snyk-to-html
+
+      - name: Run Snyk to check for vulnerabilities
+        run: |
+          snyk test --json --all-projects | snyk-to-html -o snyk-vulnerabilities-report.html
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
+
+      - name: Run Snyk Code Test (SAST)
+        run: |
+          snyk code test --json | snyk-to-html -o snyk-code-report.html
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
+
+      - name: Run Snyk to check Docker images
+        run: |
+          snyk container test node:18-alpine --json | snyk-to-html -o snyk-container-report.html
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
+
+      - name: Run Snyk Infrastructure as Code test
+        run: |
+          snyk iac test . --json | snyk-to-html -o snyk-iac-report.html
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
+
+      - name: Upload vulnerability report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-vulnerabilities-report
+          path: snyk-vulnerabilities-report.html
+          retention-days: 30
+
+      - name: Upload code analysis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-code-report
+          path: snyk-code-report.html
+          retention-days: 30
+
+      - name: Upload container report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-container-report
+          path: snyk-container-report.html
+          retention-days: 30
+
+      - name: Upload IaC report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-iac-report
+          path: snyk-iac-report.html
+          retention-days: 30
+
+      - name: Monitor project with Snyk
+        run: |
+          snyk monitor --all-projects
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
