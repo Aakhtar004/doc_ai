@@ -22,9 +22,10 @@ jobs:
         with:
           python-version: '3.11'
           
-      - name: Install Semgrep
-        run: pip install semgrep
-        
+      - name: Install Semgrep and dependencies
+        run: |
+          pip install semgrep pandas
+          
       - name: Run Semgrep scan
         run: |
           # Crear directorio para reportes
@@ -33,7 +34,6 @@ jobs:
           # Ejecutar análisis de seguridad
           semgrep --config p/default \
                   --json --output reports/semgrep.json \
-                  --html reports/semgrep-report.html \
                   --include server.cjs \
                   --include api.mjs \
                   --include config/supabase.js \
@@ -55,16 +55,84 @@ jobs:
                   --metrics off >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           
-      - name: Upload Semgrep report
+      - name: Generate HTML report from JSON
+        run: |
+          python -c "
+          import json
+          import pandas as pd
+          
+          # Leer el reporte JSON
+          with open('reports/semgrep.json', 'r') as f:
+              data = json.load(f)
+          
+          # Crear DataFrame con los resultados
+          results = []
+          for finding in data['results']:
+              result = {
+                  'Check ID': finding['check_id'],
+                  'Path': finding['path'],
+                  'Start Line': finding['start']['line'],
+                  'End Line': finding['end']['line'],
+                  'Message': finding['extra']['message'],
+                  'Severity': finding['extra']['severity'],
+                  'Rule': finding['extra']['metadata'].get('rule', ''),
+                  'CWE': finding['extra']['metadata'].get('cwe', ''),
+              }
+              results.append(result)
+          
+          df = pd.DataFrame(results)
+          
+          # Generar reporte HTML
+          html = f'''
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Semgrep Security Report</title>
+              <style>
+                  body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                  h1 {{ color: #2c3e50; }}
+                  table {{ border-collapse: collapse; width: 100%; }}
+                  th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                  tr:nth-child(even) {{ background-color: #f2f2f2; }}
+                  th {{ background-color: #4CAF50; color: white; }}
+                  .summary {{ margin-bottom: 20px; }}
+                  .count {{ font-weight: bold; }}
+              </style>
+          </head>
+          <body>
+              <h1>Semgrep Security Report</h1>
+              <div class='summary'>
+                  <p>Total findings: <span class='count'>{len(df)}</span></p>
+                  <p>High severity: <span class='count'>{len(df[df['Severity'] == 'HIGH'])}</span></p>
+                  <p>Medium severity: <span class='count'>{len(df[df['Severity'] == 'MEDIUM'])}</span></p>
+                  <p>Low severity: <span class='count'>{len(df[df['Severity'] == 'LOW'])}</span></p>
+              </div>
+              {df.to_html(index=False, escape=False)}
+          </body>
+          </html>
+          '''
+          
+          with open('reports/semgrep-report.html', 'w') as f:
+              f.write(html)
+          "
+          
+      - name: Upload Semgrep report (JSON)
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-report
-          path: reports/
+          name: semgrep-json-report
+          path: reports/semgrep.json
+          retention-days: 7
+          
+      - name: Upload Semgrep report (HTML)
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-html-report
+          path: reports/semgrep-report.html
           retention-days: 7
           
       - name: Publish HTML report to GitHub Pages
         if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: reports
