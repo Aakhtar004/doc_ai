@@ -95,16 +95,3 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         continue-on-error: true
-
-      - name: Preparar reportes para GitHub Pages
-        run: |
-          mkdir -p snyk-reports
-          cp snyk-*-report.html snyk-reports/
-
-      - name: Publicar reportes Snyk en GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./snyk-reports
-          publish_branch: gh-pages
-          keep_files: true
