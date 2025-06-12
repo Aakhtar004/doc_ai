@@ -8,30 +8,39 @@ on:
 jobs:
   security:
     runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Semgrep y prospector-html
+        run: |
+          pip install semgrep prospector-html
+
       - name: Semgrep scan
         run: |
-          semgrep scan \
-            --config="p/default" \
-            --json \
-            --output semgrep.json \
-            --include server.cjs \
-            --include api.mjs \
-            --include config/supabase.js \
-            --include routes/ \
-            --include services/ \
-            --include public/js/
-      - name: Instalar prospector-html
-        run: pip install prospector-html
+          semgrep --config p/default \
+                  --json --output semgrep.json \
+                  --include server.cjs \
+                  --include api.mjs \
+                  --include config/supabase.js \
+                  --include routes/ \
+                  --include services/ \
+                  --include public/js/
+
       - name: Generate HTML report
-        run: prospector-html --input semgrep.json --output semgrep-report.html --filter semgrep
+        run: |
+          prospector-html --input semgrep.json \
+                          --output semgrep-report.html \
+                          --filter semgrep
+
       - name: Upload HTML Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          folder: ./
-          target_branch: gh-pages
+          publish_dir: ./
+          publish_branch: gh-pages
           keep_files: true
