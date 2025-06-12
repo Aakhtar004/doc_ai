@@ -46,6 +46,12 @@ jobs:
         run: |
           npm install -g sonarqube-scanner
       
+      - name: Debug - Verificar configuración
+        run: |
+          echo "Project Key: ${{ env.SONAR_PROJECT }}"
+          echo "Organization: ${{ env.SONAR_ORG }}"
+          echo "Token exists: ${{ secrets.SONAR_TOKEN != '' }}"
+      
       - name: Ejecutar análisis SonarQube
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -55,12 +61,13 @@ jobs:
             -Dsonar.projectKey=${{ env.SONAR_PROJECT }} \
             -Dsonar.organization=${{ env.SONAR_ORG }} \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.sources=. \
-            -Dsonar.exclusions="**/node_modules/**,**/Documents/**,**/public/**,**/*.md" \
+            -Dsonar.exclusions="**/node_modules/**,**/Documents/**,**/public/**,**/*.md,**/.github/**" \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.eslint.reportPaths=eslint-report.json \
-            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.verbose=true
       
       - name: Compilar aplicación
         run: |
