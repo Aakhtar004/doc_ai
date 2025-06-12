@@ -1,46 +1,73 @@
-name: Semgrep Analysis and GitHub Pages
+name: Semgrep Security Analysis
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  security:
+  semgrep-analysis:
+    name: Semgrep Scan
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
-
-      - name: Install Semgrep y prospector-html
+          python-version: '3.11'
+          
+      - name: Install Semgrep
+        run: pip install semgrep
+        
+      - name: Run Semgrep scan
         run: |
-          pip install semgrep prospector-html
-
-      - name: Semgrep scan
-        run: |
+          # Crear directorio para reportes
+          mkdir -p reports
+          
+          # Ejecutar análisis de seguridad
           semgrep --config p/default \
-                  --json --output semgrep.json \
+                  --json --output reports/semgrep.json \
+                  --html reports/semgrep-report.html \
                   --include server.cjs \
                   --include api.mjs \
                   --include config/supabase.js \
                   --include routes/ \
                   --include services/ \
-                  --include public/js/
-
-      - name: Generate HTML report
-        run: |
-          prospector-html --input semgrep.json \
-                          --output semgrep-report.html \
-                          --filter semgrep
-
-      - name: Upload HTML Report to GitHub Pages
+                  --include public/js/ \
+                  --metrics off
+                  
+          # Resumen de resultados
+          echo "## Semgrep Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          semgrep --config p/default \
+                  --include server.cjs \
+                  --include api.mjs \
+                  --include config/supabase.js \
+                  --include routes/ \
+                  --include services/ \
+                  --include public/js/ \
+                  --metrics off >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Upload Semgrep report
+        uses: actions/upload-artifact@v3
+        with:
+          name: semgrep-report
+          path: reports/
+          retention-days: 7
+          
+      - name: Publish HTML report to GitHub Pages
+        if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
+          publish_dir: reports
           publish_branch: gh-pages
-          keep_files: true
+          destination_dir: semgrep
+          keep_files: false
