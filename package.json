@@ -4,7 +4,7 @@
   "main": "server.cjs",
   "engines": {
     "node": "18.x",
-    "npm": "9.x"
+    "npm": "10.x"
   },
   "scripts": {
     "test": "jest --coverage",
