@@ -23,12 +23,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       
-      - name: Setup Java (requerido para SonarQube Scanner)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
       - name: Instalar dependencias
         run: npm ci
       
@@ -42,32 +36,19 @@ jobs:
           npx eslint . --ext .js,.mjs,.cjs --format json --output-file eslint-report.json || echo "ESLint analysis completed"
         continue-on-error: true
       
-      - name: Instalar SonarQube Scanner
-        run: |
-          npm install -g sonarqube-scanner
-      
-      - name: Debug - Verificar configuración
-        run: |
-          echo "Project Key: ${{ env.SONAR_PROJECT }}"
-          echo "Organization: ${{ env.SONAR_ORG }}"
-          echo "Token exists: ${{ secrets.SONAR_TOKEN != '' }}"
-      
-      - name: Ejecutar análisis SonarQube
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          sonar-scanner \
-            -Dsonar.projectKey=${{ env.SONAR_PROJECT }} \
-            -Dsonar.organization=${{ env.SONAR_ORG }} \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.sources=. \
-            -Dsonar.exclusions="**/node_modules/**,**/Documents/**,**/public/**,**/*.md,**/.github/**" \
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.eslint.reportPaths=eslint-report.json \
-            -Dsonar.qualitygate.wait=true \
-            -Dsonar.verbose=true
+        with:
+          args: >
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT }}
+            -Dsonar.organization=${{ env.SONAR_ORG }}
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/node_modules/**,**/Documents/**,**/public/**,**/*.md,**/.github/**
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.eslint.reportPaths=eslint-report.json
       
       - name: Compilar aplicación
         run: |
