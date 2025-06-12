@@ -29,5 +29,10 @@
   "devDependencies": {
     "eslint": "^9.28.0",
     "jest": "^30.0.0"
-  }
+  },
+
+  
+  "homepage": "https://github.com/Aakhtar004/doc_ai"
+ 
+
 }

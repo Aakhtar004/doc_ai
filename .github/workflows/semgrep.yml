@@ -1,3 +1,4 @@
+# .github/workflows/semgrep.yml
 name: Semgrep Security Analysis
 
 on:
@@ -9,29 +10,25 @@ on:
       - main
 
 jobs:
-  semgrep-analysis:
-    name: Semgrep Scan
+  semgrep-scan:
+    name: Scan & Publish Semgrep Report
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Set up Python
+        uses: actions/checkout@v3
+
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          
-      - name: Install Semgrep and dependencies
+
+      - name: Install Semgrep + pandas
+        run: pip install semgrep pandas
+
+      - name: Run Semgrep (JSON output)
         run: |
-          pip install semgrep pandas
-          
-      - name: Run Semgrep scan
-        run: |
-          # Crear directorio para reportes
           mkdir -p reports
-          
-          # Ejecutar análisis de seguridad
           semgrep --config p/default \
                   --json --output reports/semgrep.json \
                   --include server.cjs \
@@ -41,101 +38,48 @@ jobs:
                   --include services/ \
                   --include public/js/ \
                   --metrics off
-                  
-          # Resumen de resultados
-          echo "## Semgrep Results Summary" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          semgrep --config p/default \
-                  --include server.cjs \
-                  --include api.mjs \
-                  --include config/supabase.js \
-                  --include routes/ \
-                  --include services/ \
-                  --include public/js/ \
-                  --metrics off >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          
-      - name: Generate HTML report from JSON
+
+      - name: Generate HTML report
         run: |
-          python -c "
-          import json
-          import pandas as pd
-          
-          # Leer el reporte JSON
-          with open('reports/semgrep.json', 'r') as f:
-              data = json.load(f)
-          
-          # Crear DataFrame con los resultados
-          results = []
-          for finding in data['results']:
-              result = {
-                  'Check ID': finding['check_id'],
-                  'Path': finding['path'],
-                  'Start Line': finding['start']['line'],
-                  'End Line': finding['end']['line'],
-                  'Message': finding['extra']['message'],
-                  'Severity': finding['extra']['severity'],
-                  'Rule': finding['extra']['metadata'].get('rule', ''),
-                  'CWE': finding['extra']['metadata'].get('cwe', ''),
-              }
-              results.append(result)
-          
-          df = pd.DataFrame(results)
-          
-          # Generar reporte HTML
-          html = f'''
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Semgrep Security Report</title>
-              <style>
-                  body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                  h1 {{ color: #2c3e50; }}
-                  table {{ border-collapse: collapse; width: 100%; }}
-                  th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                  tr:nth-child(even) {{ background-color: #f2f2f2; }}
-                  th {{ background-color: #4CAF50; color: white; }}
-                  .summary {{ margin-bottom: 20px; }}
-                  .count {{ font-weight: bold; }}
-              </style>
-          </head>
-          <body>
-              <h1>Semgrep Security Report</h1>
-              <div class='summary'>
-                  <p>Total findings: <span class='count'>{len(df)}</span></p>
-                  <p>High severity: <span class='count'>{len(df[df['Severity'] == 'HIGH'])}</span></p>
-                  <p>Medium severity: <span class='count'>{len(df[df['Severity'] == 'MEDIUM'])}</span></p>
-                  <p>Low severity: <span class='count'>{len(df[df['Severity'] == 'LOW'])}</span></p>
-              </div>
-              {df.to_html(index=False, escape=False)}
-          </body>
-          </html>
-          '''
-          
-          with open('reports/semgrep-report.html', 'w') as f:
-              f.write(html)
-          "
-          
-      - name: Upload Semgrep report (JSON)
-        uses: actions/upload-artifact@v4
-        with:
-          name: semgrep-json-report
-          path: reports/semgrep.json
-          retention-days: 7
-          
-      - name: Upload Semgrep report (HTML)
-        uses: actions/upload-artifact@v4
-        with:
-          name: semgrep-html-report
-          path: reports/semgrep-report.html
-          retention-days: 7
-          
-      - name: Publish HTML report to GitHub Pages
+          python - <<'PYCODE'
+          import json, pandas as pd
+
+          data = json.load(open('reports/semgrep.json'))
+          rows = []
+          for r in data.get('results', []):
+              rows.append({
+                  'Check ID': r['check_id'],
+                  'Path':     r['path'],
+                  'Start':    r['start']['line'],
+                  'End':      r['end']['line'],
+                  'Message':  r['extra']['message'],
+                  'Severity': r['extra']['severity']
+              })
+          df = pd.DataFrame(rows)
+          html = f"""
+          <!doctype html><html><head>
+            <meta charset='utf-8'><title>Semgrep Report</title>
+            <style>
+              body {{ font-family: Arial; }}
+              table {{ border-collapse: collapse; width: 100%; }}
+              th, td {{ border: 1px solid #ccc; padding: 6px; }}
+              th {{ background: #eee; }}
+            </style>
+          </head><body>
+            <h1>Semgrep Security Report</h1>
+            <p>Total findings: {len(df)}</p>
+            {df.to_html(index=False)}
+          </body></html>
+          """
+          open('reports/semgrep-report.html','w').write(html)
+          PYCODE
+
+      - name: Deploy report to GH‑Pages
         if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: reports
+          publish_dir: ./reports
           publish_branch: gh-pages
           destination_dir: semgrep
           keep_files: false
