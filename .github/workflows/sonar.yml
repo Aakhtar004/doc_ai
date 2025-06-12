@@ -1,8 +1,8 @@
 name: SonarQube Analysis and Node.js CI
 env:
-  NODE_VERSION: '22.x'                      # la versión de Node.js
-  SONAR_ORG: 'doc-ai-sc'                    # Nombre de la organización de sonar cloud
-  SONAR_PROJECT: 'doc-ai-sc_doc-ai-py'         # Key ID del proyecto de sonar (actualizado para tu proyecto)
+  NODE_VERSION: '22.x'                     # la versión de Node.js
+  SONAR_ORG: 'docaisc'                     # Nombre de la organización de sonar cloud
+  SONAR_PROJECT: 'docaisc_docaipy'         # Key ID del proyecto de sonar (actualizado para tu proyecto)
 on:
   push:
     branches: [ "main" ] 
