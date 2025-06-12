@@ -24,6 +24,8 @@ jobs:
             --include routes/ \
             --include services/ \
             --include public/js/
+      - name: Instalar prospector-html
+        run: pip install prospector-html
       - name: Generate HTML report
         run: prospector-html --input semgrep.json --output semgrep-report.html --filter semgrep
       - name: Upload HTML Report to GitHub Pages
