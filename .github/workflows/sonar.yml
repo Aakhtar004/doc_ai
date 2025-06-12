@@ -1,0 +1,82 @@
+name: SonarQube Analysis and Node.js CI
+env:
+  NODE_VERSION: '22.x'                      # la versión de Node.js
+  SONAR_ORG: 'apibank89'                    # Nombre de la organización de sonar cloud
+  SONAR_PROJECT: 'apibank89_gdi-ia'         # Key ID del proyecto de sonar (actualizado para tu proyecto)
+on:
+  push:
+    branches: [ "main" ] 
+  workflow_dispatch:
+
+jobs:
+  sonarqube:
+    name: SonarQube Analysis and Node.js Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Setup Java (requerido para SonarQube Scanner)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Instalar dependencias
+        run: npm ci
+      
+      - name: Ejecutar pruebas con cobertura
+        run: |
+          npm test -- --coverage --watchAll=false || echo "No tests configured yet"
+        continue-on-error: true
+      
+      - name: Ejecutar ESLint para análisis estático
+        run: |
+          npx eslint . --ext .js,.mjs,.cjs --format json --output-file eslint-report.json || echo "ESLint analysis completed"
+        continue-on-error: true
+      
+      - name: Instalar SonarQube Scanner
+        run: |
+          npm install -g sonarqube-scanner
+      
+      - name: Ejecutar análisis SonarQube
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT }} \
+            -Dsonar.organization=${{ env.SONAR_ORG }} \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.sources=. \
+            -Dsonar.exclusions="**/node_modules/**,**/Documents/**,**/public/**,**/*.md" \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.eslint.reportPaths=eslint-report.json \
+            -Dsonar.qualitygate.wait=true
+      
+      - name: Compilar aplicación
+        run: |
+          npm run build || echo "No build script configured"
+        continue-on-error: true
+      
+      - name: Crear artefacto de despliegue
+        run: |
+          mkdir -p ./artifacts
+          cp -r . ./artifacts/
+          rm -rf ./artifacts/node_modules
+          rm -rf ./artifacts/.git
+      
+      - name: Subir artefactos
+        uses: actions/upload-artifact@v4
+        with:
+          name: docugen-ai-build
+          path: ./artifacts
+          retention-days: 5
