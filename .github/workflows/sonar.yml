@@ -71,4 +71,3 @@ jobs:
         with:
           name: docugen-ai-build
           path: ./artifacts
-          retention-days: 5

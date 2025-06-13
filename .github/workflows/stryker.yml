@@ -1,0 +1,63 @@
+name: Pruebas de Mutaciones con Stryker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  mutation-testing:
+    name: Ejecutar Stryker y publicar reporte
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Stryker
+        run: npm install --save-dev @stryker-mutator/core
+
+      - name: Ejecutar Stryker
+        run: npx stryker run
+
+      - name: Preparar carpeta temporal para GH Pages
+        run: mkdir -p ./gh-pages-root/mutaciones && cp -r ./reports/mutation/html/* ./gh-pages-root/mutaciones/
+
+      - name: Crear índice si no existe
+        run: |
+          if [ ! -f ./gh-pages-root/index.md ]; then
+            echo -e "---\nlayout: default\n---\n\n# Reportes de Calidad\n" > ./gh-pages-root/index.md
+          fi
+          echo "- [Mutaciones (Stryker)](mutaciones/index.html)" >> ./gh-pages-root/index.md
+
+      - name: Crear artefacto de Stryker
+        run: |
+          mkdir -p ./stryker-artifact
+          if [ -d "./reports/mutation/html" ]; then
+            cp -r ./reports/mutation/html/* ./stryker-artifact/
+          fi
+        continue-on-error: true
+
+      - name: Subir artefactos de Stryker
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-reports
+          path: ./stryker-artifact
+          retention-days: 5
+
+      # Mantener tu publicación actual para compatibilidad
+      - name: Publicar reporte de mutaciones en GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages-root
+          keep_files: true
