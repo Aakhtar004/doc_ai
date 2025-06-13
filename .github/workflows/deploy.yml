@@ -321,33 +321,106 @@ jobs:
               echo '<html><body><h1>Semgrep - Sin datos</h1><p>No se encontró archivo SARIF</p></body></html>' > ./dashboard/semgrep/index.html
           fi
           
-          # Reporte Snyk (básico)
-          cat > ./dashboard/snyk/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html><head>
-              <meta charset="UTF-8">
-              <title>Snyk - Doc AI</title>
-              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-              <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-          </head><body>
-              <nav class="navbar navbar-dark bg-info fixed-top">
-                  <div class="container">
-                      <a class="navbar-brand" href="../index.html">
-                          <i class="fas fa-arrow-left me-2"></i>Dashboard
-                      </a>
-                      <span class="navbar-text">Análisis Snyk</span>
-                  </div>
-              </nav>
-              <div style="height: 76px;"></div>
-              <div class="container my-4">
-                  <h2><i class="fas fa-bug text-info me-2"></i>Snyk Dependency Analysis</h2>
-                  <div class="alert alert-info">
-                      <h5><i class="fas fa-info-circle me-2"></i>Estado</h5>
-                      <p class="mb-0">Análisis de dependencias pendiente. Configure SNYK_TOKEN para habilitar.</p>
-                  </div>
+          # Reporte Snyk (mejorado)
+          if [ -f "./snyk-reports/snyk-report.json" ] || [ -f "./snyk-reports/basic-report.json" ]; then
+              python3 << 'EOF'
+          import json, os
+          
+          try:
+              # Intentar leer reporte real de Snyk
+              if os.path.exists('./snyk-reports/snyk-report.json'):
+                  with open('./snyk-reports/snyk-report.json', 'r') as f:
+                      snyk_data = json.load(f)
+                  vulnerabilities = snyk_data.get('vulnerabilities', [])
+                  configured = True
+              elif os.path.exists('./snyk-reports/basic-report.json'):
+                  with open('./snyk-reports/basic-report.json', 'r') as f:
+                      snyk_data = json.load(f)
+                  vulnerabilities = []
+                  configured = False
+              else:
+                  vulnerabilities = []
+                  configured = False
+              
+              high = sum(1 for v in vulnerabilities if v.get('severity') == 'high')
+              medium = sum(1 for v in vulnerabilities if v.get('severity') == 'medium')
+              low = sum(1 for v in vulnerabilities if v.get('severity') == 'low')
+              
+              status_alert = """
+              <div class="alert alert-warning">
+                  <h5><i class="fas fa-exclamation-triangle me-2"></i>Snyk no configurado</h5>
+                  <p>Para habilitar el análisis de Snyk, configure el secret SNYK_TOKEN en GitHub.</p>
+                  <p class="mb-0">Vaya a Settings > Secrets and variables > Actions y agregue su token de Snyk.</p>
               </div>
-          </body></html>
+              """ if not configured else f"""
+              <div class="alert alert-success">
+                  <h5><i class="fas fa-check-circle me-2"></i>Análisis completado</h5>
+                  <p class="mb-0">Se analizaron las dependencias del proyecto exitosamente.</p>
+              </div>
+              """
+              
+              html = f"""
+              <!DOCTYPE html>
+              <html><head>
+                  <meta charset="UTF-8">
+                  <title>Snyk - Doc AI</title>
+                  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+              </head><body>
+                  <nav class="navbar navbar-dark bg-info fixed-top">
+                      <div class="container">
+                          <a class="navbar-brand" href="../index.html">
+                              <i class="fas fa-arrow-left me-2"></i>Dashboard
+                          </a>
+                          <span class="navbar-text">Análisis Snyk</span>
+                      </div>
+                  </nav>
+                  <div style="height: 76px;"></div>
+                  <div class="container my-4">
+                      <h2><i class="fas fa-bug text-info me-2"></i>Snyk Dependency Analysis</h2>
+                      
+                      {status_alert}
+                      
+                      <div class="row mb-4">
+                          <div class="col-md-3"><div class="card bg-danger text-white"><div class="card-body text-center"><h3>{high}</h3><p class="mb-0">Alto</p></div></div></div>
+                          <div class="col-md-3"><div class="card bg-warning text-dark"><div class="card-body text-center"><h3>{medium}</h3><p class="mb-0">Medio</p></div></div></div>
+                          <div class="col-md-3"><div class="card bg-info text-white"><div class="card-body text-center"><h3>{low}</h3><p class="mb-0">Bajo</p></div></div></div>
+                          <div class="col-md-3"><div class="card bg-primary text-white"><div class="card-body text-center"><h3>{len(vulnerabilities)}</h3><p class="mb-0">Total</p></div></div></div>
+                      </div>
+              """
+              
+              if len(vulnerabilities) == 0 and configured:
+                  html += '<div class="alert alert-success"><h5><i class="fas fa-check-circle me-2"></i>Sin vulnerabilidades</h5><p class="mb-0">No se encontraron vulnerabilidades en las dependencias.</p></div>'
+              elif len(vulnerabilities) > 0:
+                  for vuln in vulnerabilities:
+                      severity = vuln.get('severity', 'unknown')
+                      color = 'danger' if severity == 'high' else 'warning' if severity == 'medium' else 'info'
+                      html += f"""
+                      <div class="card mb-3 border-{color}">
+                          <div class="card-header"><h6 class="mb-0"><span class="badge bg-{color} me-2">{severity.upper()}</span>{vuln.get('title', 'Vulnerabilidad')}</h6></div>
+                          <div class="card-body">
+                              <p><strong>Paquete:</strong> {vuln.get('packageName', 'N/A')}</p>
+                              <p class="mb-0">{vuln.get('description', 'Sin descripción')}</p>
+                          </div>
+                      </div>"""
+              
+              html += '</div></body></html>'
+              
+              with open('./dashboard/snyk/index.html', 'w') as f:
+                  f.write(html)
+              
+              print("✅ Snyk report generated")
+          except Exception as e:
+              print(f"❌ Error generating Snyk report: {e}")
           EOF
+          else
+              echo "⚠️ No Snyk reports found, creating basic report"
+              cat > ./dashboard/snyk/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html><head><meta charset="UTF-8"><title>Snyk - Doc AI</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+          <body><div class="container my-4"><h2>Snyk Analysis</h2><div class="alert alert-info"><p>Snyk analysis not configured yet.</p></div></div></body></html>
+          EOF
+          fi
           
           # Reporte SonarQube
           cat > ./dashboard/sonar/index.html << 'EOF'
