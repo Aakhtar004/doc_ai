@@ -23,8 +23,8 @@ jobs:
         with:
           python-version: '3.11' # O la versión que prefieras
 
-      - name: Install Semgrep and pandas
-        run: pip install semgrep pandas
+      - name: Install Semgrep, pandas, and Jinja2
+        run: pip install semgrep pandas jinja2
 
       - name: Create reports directory
         run: mkdir -p docs/reports/semgrep
