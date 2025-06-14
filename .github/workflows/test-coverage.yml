@@ -1,12 +1,12 @@
 name: Test and Coverage Report
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["SonarCloud Analysis"] # Asegúrate que este sea el 'name:' exacto de tu workflow de Semgrep
+    types:
+      - completed
+    branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: write
 
