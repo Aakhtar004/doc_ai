@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Coincide con tu package.json engines
+          node-version: '18' # Coincide con tu package.json enginesc 
           cache: 'npm'
 
       - name: Install dependencies
