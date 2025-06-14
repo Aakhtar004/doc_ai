@@ -1,32 +1,29 @@
-name: 🧬 Mutation Testing (Stryker)
+name: 🧬 Stryker Mutation Testing
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1'
 
 jobs:
-  setup:
-    uses: ./.github/workflows/base-setup.yml
-    with:
-      reports-dir: 'reports/mutation'
-
   mutation-testing:
-    needs: setup
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: npm ci
+          
+      - name: 📦 Install dependencies
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: 📁 Setup mutation reports
-        run: mkdir -p reports/mutation
+        run: mkdir -p reports/mutation docs/reports/mutation
 
       - name: 🧬 Install and run Stryker
         run: |
@@ -54,20 +51,23 @@ jobs:
                   </div>
                   
                   <div class="mt-4">
-                      <h4>Reportes disponibles:</h4>
-                      <ul>
-                          <li><a href="index.html">Reporte HTML completo</a></li>
-                          <li><a href="mutation-report.json">Datos JSON</a></li>
-                      </ul>
+                      <h4>Estado:</h4>
+                      <p>Configuración simplificada - Ejecutar manualmente cuando sea necesario.</p>
                   </div>
               </div>
           </body>
           </html>
           EOF
 
-      - name: 📤 Upload Mutation Reports
-        uses: actions/upload-artifact@v4
+      - name: 📂 Copy to docs
+        run: cp -r reports/mutation/* docs/reports/mutation/
+
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs
+          keep_files: true
           name: mutation-reports
           path: reports/mutation/
           retention-days: 30

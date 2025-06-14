@@ -14,18 +14,15 @@ jobs:
       test-report-path: ${{ steps.prepare.outputs.report-path }}
     steps:
       - uses: actions/checkout@v4
-      
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
       - name: 📦 Install dependencies
         run: |
           rm -f package-lock.json
           npm install
-          
       - name: 📁 Prepare test structure
         id: prepare
         run: |
@@ -37,12 +34,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
       - name: 📦 Install dependencies
         run: |
           rm -f package-lock.json
@@ -68,12 +63,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
       - name: 📦 Install dependencies
         run: |
           rm -f package-lock.json
@@ -96,12 +89,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
       - name: 📦 Install dependencies
         run: |
           rm -f package-lock.json
@@ -206,6 +197,15 @@ jobs:
                   </div>
               </div>
           </body>
+          </html>
+          EOF
+          
+      - name: 🚀 Commit & Push to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          keep_files: true
           </html>
           EOF
           

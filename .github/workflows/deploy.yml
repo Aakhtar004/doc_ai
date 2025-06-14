@@ -72,7 +72,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs
           force_orphan: true
-          force_orphan: true
           .analysis-card:hover{transform:translateY(-8px);box-shadow:0 20px 25px rgba(0,0,0,0.1)}
           .card-semgrep{border-top:6px solid var(--danger)}.card-snyk{border-top:6px solid var(--info)}
           .card-sonar{border-top:6px solid var(--primary)}.card-stryker{border-top:6px solid var(--success)}
@@ -491,4 +490,5 @@ jobs:
       
       - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4
         uses: actions/deploy-pages@v4
