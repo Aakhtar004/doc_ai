@@ -2,12 +2,12 @@
 name: 🚀 Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'docs/**'
-      - 'public/**'
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["🔎 Semgrep Security Analysis"] # Asegúrate que este es el nombre exacto de tu workflow semgrep.yml
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch: # Mantén esto para ejecuciones manuales
 
 permissions:
   contents: write
@@ -17,14 +17,17 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Solo ejecuta si el workflow de Semgrep fue exitoso
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main # Asegura que se haga checkout de la rama main actualizada
 
       - name: Disable Jekyll processing
         run: |
-          # PowerShell o Linux funcionan
-          New-Item -Path docs\.nojekyll -ItemType File -Force || touch docs/.nojekyll
+          touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
