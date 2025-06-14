@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write    # <-- permiso para push a la rama
   pages: write
   id-token: write
 
@@ -65,6 +65,9 @@ jobs:
           ---
           *Dashboard actualizado automáticamente por GitHub Actions*
           EOF
+
+      - name: Disable Jekyll processing
+        run: touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
