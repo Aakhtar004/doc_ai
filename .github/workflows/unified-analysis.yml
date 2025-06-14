@@ -1,0 +1,171 @@
+name: 🔍 Unified Code Analysis & Security
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  unified-analysis:
+    name: 🎯 Complete Analysis Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 📁 Create reports structure
+        run: |
+          mkdir -p reports/{security,sonar,coverage}
+          mkdir -p docs/reports/{security,sonar,coverage}
+
+      # SonarCloud Analysis
+      - name: 🎯 SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: 📊 Generate SonarCloud summary
+        run: |
+          echo "SonarCloud analysis completed" > reports/sonar/analysis-summary.txt
+          echo "Project Key: doc-ai-sc_doc-ai-py" >> reports/sonar/analysis-summary.txt
+          echo "Analysis Date: $(date)" >> reports/sonar/analysis-summary.txt
+
+      # Snyk Security Analysis
+      - name: 🛡️ Snyk Dependencies Scan
+        continue-on-error: true
+        run: |
+          npx snyk test --json > reports/security/snyk-dependencies.json || true
+          npx snyk test --sarif > reports/security/snyk-dependencies.sarif || true
+
+      - name: 💻 Snyk Code Analysis
+        continue-on-error: true
+        run: |
+          npx snyk code test --json > reports/security/snyk-code.json || true
+          npx snyk code test --sarif > reports/security/snyk-code.sarif || true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Semgrep Security Analysis
+      - name: 🔎 Semgrep Static Analysis
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+          generateSarif: "1"
+        continue-on-error: true
+
+      - name: 📄 Process Semgrep results
+        run: |
+          if [ -f semgrep.sarif ]; then
+            mv semgrep.sarif reports/security/semgrep-results.sarif
+          fi
+          if [ -f semgrep.json ]; then
+            mv semgrep.json reports/security/semgrep-results.json
+          fi
+
+      # ESLint Analysis
+      - name: 🔧 ESLint Analysis
+        continue-on-error: true
+        run: |
+          npx eslint . --format json > reports/security/eslint-report.json || true
+          npx eslint . --format html > reports/security/eslint-report.html || true
+
+      # Generate Security Summary
+      - name: 📋 Generate Security Summary
+        run: |
+          cat > reports/security/security-summary.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Security Analysis Summary</title>
+              <meta charset="UTF-8">
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 20px; }
+                  .header { background: #f8f9fa; padding: 20px; border-radius: 5px; }
+                  .report-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+                  .status-ok { color: green; }
+                  .status-warning { color: orange; }
+                  .status-error { color: red; }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>🛡️ Security Analysis Summary</h1>
+                  <p>Generated on: $(date)</p>
+                  <p>Project: DocAI - Generador de documentación IA</p>
+              </div>
+              
+              <div class="report-section">
+                  <h2>📊 Available Reports</h2>
+                  <ul>
+                      <li><a href="snyk-dependencies.json">Snyk Dependencies (JSON)</a></li>
+                      <li><a href="snyk-code.json">Snyk Code Analysis (JSON)</a></li>
+                      <li><a href="semgrep-results.json">Semgrep Results (JSON)</a></li>
+                      <li><a href="eslint-report.html">ESLint Report (HTML)</a></li>
+                  </ul>
+              </div>
+              
+              <div class="report-section">
+                  <h2>🔗 External Links</h2>
+                  <ul>
+                      <li><a href="https://app.snyk.io/" target="_blank">Snyk Dashboard</a></li>
+                      <li><a href="https://sonarcloud.io/project/overview?id=doc-ai-sc_doc-ai-py" target="_blank">SonarCloud Project</a></li>
+                      <li><a href="https://github.com/Aakhtar004/doc_ai/security" target="_blank">GitHub Security</a></li>
+                  </ul>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      # Upload Security Results to GitHub
+      - name: 📤 Upload Security Results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('reports/security/*.sarif') != ''
+        with:
+          sarif_file: reports/security/
+          category: security-analysis
+
+      # Upload Artifacts
+      - name: 📤 Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: reports/security/
+          retention-days: 30
+
+      - name: 📤 Upload SonarCloud Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-reports
+          path: reports/sonar/
+          retention-days: 30
+
+      # Copy to docs for GitHub Pages
+      - name: 📂 Copy reports to docs
+        run: |
+          cp -r reports/security/* docs/reports/security/ 2>/dev/null || true
+          cp -r reports/sonar/* docs/reports/sonar/ 2>/dev/null || true
+
+      - name: 📊 Update docs index with security info
+        run: |
+          timestamp=$(date '+%Y-%m-%d %H:%M:%S UTC')
+          sed -i "s/{timestamp}/$timestamp/g" docs/index.md

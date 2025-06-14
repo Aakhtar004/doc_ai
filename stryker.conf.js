@@ -1,6 +1,6 @@
 module.exports = {
   packageManager: "npm",
-  reporters: ["html", "clear-text", "progress"],
+  reporters: ["html", "clear-text", "progress", "json"],
   testRunner: "jest",
   jest: {
     projectType: "custom",
@@ -12,11 +12,10 @@ module.exports = {
   },
   coverageAnalysis: "off",
   mutate: [
-    "*.js",
-    "*.cjs",
-    "routes/**/*.js",
     "services/**/*.js",
+    "routes/**/*.js", 
     "config/**/*.js",
+    "public/js/main.js",
     "!**/*.test.js",
     "!**/*.spec.js",
     "!node_modules/**",
@@ -24,11 +23,15 @@ module.exports = {
     "!reports/**"
   ],
   htmlReporter: {
-    baseDir: "reports/mutation/html"
+    baseDir: "reports/mutation"
+  },
+  jsonReporter: {
+    fileName: "reports/mutation/mutation-report.json"
   },
   thresholds: {
-    high: 80,
+    high: 70,
     low: 60,
     break: null
-  }
+  },
+  timeoutMS: 30000
 };

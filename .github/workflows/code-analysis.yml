@@ -1,0 +1,94 @@
+name: Análisis de Código y Reportes de Calidad
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  code-analysis:
+    name: Análisis de Código y Seguridad
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar Pruebas
+        run: npm test -- --coverage
+
+      - name: Analizar con ESLint
+        run: npx eslint .
+
+      - name: 📦 Run Snyk Test (JSON)
+        run: snyk test --json > snyk-report.json
+
+      - name: 📤 Upload Snyk artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-reports
+          path: snyk-report.json
+
+  mutation-testing:
+    name: Ejecutar Stryker y publicar reporte
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Stryker
+        run: npm install --save-dev @stryker-mutator/core
+
+      - name: Ejecutar Stryker
+        run: npx stryker run
+
+      - name: Preparar carpeta temporal para GH Pages
+        run: mkdir -p ./docs/mutaciones && cp -r ./reports/mutation/html/* ./docs/mutaciones/
+
+      - name: Crear índice si no existe
+        run: |
+          if [ ! -f ./docs/index.md ]; then
+            echo -e "---\nlayout: default\n---\n\n# Reportes de Calidad\n" > ./docs/index.md
+          fi
+          echo "- [Mutaciones (Stryker)](mutaciones/index.html)" >> ./docs/index.md
+
+      - name: Crear artefacto de Stryker
+        run: |
+          mkdir -p ./stryker-artifact
+          if [ -d "./reports/mutation/html" ]; then
+            cp -r ./reports/mutation/html/* ./stryker-artifact/
+          fi
+        continue-on-error: true
+
+      - name: Subir artefactos de Stryker
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-reports
+          path: ./stryker-artifact
+          retention-days: 5
+
+      # Mantener tu publicación actual para compatibilidad
+      - name: Publicar reporte de mutaciones en GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          keep_files: true

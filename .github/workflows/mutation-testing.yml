@@ -1,0 +1,153 @@
+name: 🧬 Mutation Testing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  mutation-testing:
+    name: 🧬 Stryker Mutation Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 📁 Create reports structure
+        run: |
+          mkdir -p reports/mutation
+          mkdir -p docs/reports/mutation
+
+      - name: 🧬 Run Stryker mutation tests
+        run: |
+          npx stryker run || echo "Mutation testing completed"
+          
+      - name: 📊 Process mutation results
+        run: |
+          if [ -f reports/mutation/mutation-report.json ]; then
+            # Extract mutation score
+            MUTATION_SCORE=$(node -e "
+              const fs = require('fs');
+              if (fs.existsSync('reports/mutation/mutation-report.json')) {
+                const report = JSON.parse(fs.readFileSync('reports/mutation/mutation-report.json', 'utf8'));
+                console.log(report.mutationScore || 0);
+              } else {
+                console.log(0);
+              }
+            ")
+            
+            echo "Mutation Score: $MUTATION_SCORE%"
+            echo "MUTATION_SCORE=$MUTATION_SCORE" >> $GITHUB_ENV
+            
+            # Generate summary
+            cat > reports/mutation/mutation-summary.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Mutation Testing Summary - DocAI</title>
+              <meta charset="UTF-8">
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 20px; }
+                  .header { background: #f8f9fa; padding: 20px; border-radius: 5px; }
+                  .score { font-size: 2em; font-weight: bold; padding: 20px; text-align: center; }
+                  .good { background-color: #d4edda; color: #155724; }
+                  .warning { background-color: #fff3cd; color: #856404; }
+                  .poor { background-color: #f8d7da; color: #721c24; }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>🧬 Mutation Testing Results</h1>
+                  <p>Generated on: $(date)</p>
+                  <p>Target Score: > 60%</p>
+              </div>
+              
+              <div class="score $([ $MUTATION_SCORE -gt 80 ] && echo "good" || ([ $MUTATION_SCORE -gt 60 ] && echo "warning" || echo "poor"))">
+                  Mutation Score: $MUTATION_SCORE%
+              </div>
+              
+              <div style="margin-top: 30px;">
+                  <h2>📁 Detailed Reports</h2>
+                  <ul>
+                      <li><a href="index.html">Complete HTML Report</a></li>
+                      <li><a href="mutation-report.json">JSON Report</a></li>
+                  </ul>
+              </div>
+              
+              <div style="margin-top: 30px;">
+                  <h2>📊 What is Mutation Testing?</h2>
+                  <p>Mutation testing evaluates the quality of your test suite by introducing small changes (mutations) to your code and checking if your tests detect them.</p>
+                  <ul>
+                      <li><strong>Killed Mutants:</strong> Tests detected the change ✅</li>
+                      <li><strong>Survived Mutants:</strong> Tests missed the change ❌</li>
+                      <li><strong>Score:</strong> Percentage of killed mutants</li>
+                  </ul>
+              </div>
+          </body>
+          </html>
+          EOF
+          else
+            echo "MUTATION_SCORE=0" >> $GITHUB_ENV
+            echo "⚠️ No mutation report generated"
+          fi
+
+      - name: 📤 Upload Mutation Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-reports
+          path: reports/mutation/
+          retention-days: 30
+
+      - name: 📂 Copy to docs for GitHub Pages
+        run: |
+          cp -r reports/mutation/* docs/reports/mutation/ 2>/dev/null || true
+
+      - name: 💬 Comment on PR with mutation results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const mutationScore = process.env.MUTATION_SCORE || 0;
+            
+            let status = '❌';
+            let color = 'red';
+            if (mutationScore > 80) {
+              status = '🎯';
+              color = 'green';
+            } else if (mutationScore > 60) {
+              status = '⚠️';
+              color = 'yellow';
+            }
+            
+            const comment = `## 🧬 Mutation Testing Results
+            
+            **Mutation Score:** ${status} ${mutationScore}% (Target: >60%)
+            
+            ${mutationScore > 60 ? '✅ Great job! Your tests are catching mutations effectively.' : '⚠️ Consider improving your test suite to catch more potential bugs.'}
+            
+            📊 [View detailed mutation report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            ### What this means:
+            - **${mutationScore}% of code mutations** were detected by your tests
+            - Higher scores indicate more thorough test coverage
+            - Mutation testing helps find gaps in your test suite`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

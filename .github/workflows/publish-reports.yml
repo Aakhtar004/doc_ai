@@ -1,0 +1,74 @@
+name: 🚀 Publish All Reports to GH-Pages
+
+on:
+  workflow_run:
+    workflows: 
+      - "🔍 Code Analysis & Security"
+      - "🧬 Mutation Testing"
+      - "🧪 BDD Tests"
+    types: [ completed ]
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📁 Prepare docs directories
+        run: |
+          rm -rf docs
+          mkdir -p docs/reports/{coverage,security,mutation,bdd}
+
+      - name: 📥 Download coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: docs/reports/coverage
+
+      - name: 📥 Download snyk artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: snyk-reports
+          path: docs/reports/security
+
+      - name: 📥 Download semgrep artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: semgrep-results
+          path: docs/reports/security
+
+      - name: 📥 Download mutation artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mutation-reports
+          path: docs/reports/mutation
+
+      - name: 📥 Download BDD artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bdd-reports
+          path: docs/reports/bdd
+
+      - name: 📝 Generate docs/index.md
+        run: |
+          cat > docs/index.md << 'EOF'
+          # 📊 Dashboard de Reportes
+
+          ## 🚀 Cobertura de Código
+          - [Cobertura HTML](reports/coverage/index.html)
+
+          ## 🛡️ Seguridad
+          - [Snyk JSON](reports/security/snyk-report.json)
+          - [Semgrep JSON](reports/security/semgrep-results.json)
+
+          ## 🧬 Mutaciones
+          - [Reporte Mutaciones HTML](reports/mutation/index.html)
+
+          ## 🧪 Pruebas BDD
+          - [Reporte BDD HTML](reports/bdd/index.html)
+          EOF
+
+      - name: 📤 Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          path: docs

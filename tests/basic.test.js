@@ -23,4 +23,19 @@ describe('Basic test setup for Doc AI', () => {
     expect(packageJson.dependencies).toHaveProperty('express');
     expect(packageJson.dependencies).toHaveProperty('@google/generative-ai');
   });
+
+  test('should have correct main file', () => {
+    const packageJson = require('../package.json');
+    expect(packageJson.main).toBe('server.cjs');
+  });
+
+  test('should verify gemini service exists', () => {
+    const fs = require('fs');
+    expect(fs.existsSync('services/gemini.js')).toBe(true);
+  });
+
+  test('should verify auth routes exist', () => {
+    const fs = require('fs');
+    expect(fs.existsSync('routes/auth.js')).toBe(true);
+  });
 });

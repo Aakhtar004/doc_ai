@@ -1,4 +1,4 @@
-# 📄 Proyecto: Full Servicios - Doc AI
+# 📄 Proyecto: DocAI - Generador de documentación impulsado por IA
 
 Este proyecto es una aplicación web basada en Node.js que integra **Google Gemini API** para procesamiento de texto y **Supabase PostgreSQL** como backend de base de datos. Se utiliza **Express.js** para manejar las rutas del servidor y se incluye una interfaz frontend básica para autenticación y visualización de documentos.
 
