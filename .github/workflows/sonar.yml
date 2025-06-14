@@ -5,73 +5,42 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_call: {}
 
 jobs:
-  sonar-analysis:
+  analysis:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    outputs:
+      summary-path: ${{ steps.summary.outputs.summary-path }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
-      - name: Setup Node.js
+      - name: Setup Node.js & deps
         uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
+        with: { node-version: '18', cache: 'npm' }
+      - run: npm install
 
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
-
-      - name: Setup sonar reports
-        run: mkdir -p reports/sonar docs/reports/sonar
-
-      - name: Run tests for SonarCloud
+      - name: Run tests + coverage
         run: npm run test:coverage || true
 
-      - name: SonarCloud Scan
+      - name: SonarCloud scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         continue-on-error: true
 
-      - name: Generate SonarCloud summary
+      - name: Generate Sonar summary
+        id: summary
         run: |
+          mkdir -p reports/sonar
           cat > reports/sonar/sonar-summary.html <<EOF
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>SonarCloud Analysis - DocAI</title>
-              <meta charset="UTF-8">
-              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-          </head>
-          <body>
-              <div class="container mt-4">
-                  <h1>🎯 SonarCloud Quality Analysis</h1>
-                  <p>Análisis de calidad de código completado</p>
-                  <div class="alert alert-primary">
-                      <h4>Dashboard SonarCloud:</h4>
-                      <a href="https://sonarcloud.io/project/overview?id=doc-ai-project" 
-                         class="btn btn-primary" target="_blank">
-                          Ver en SonarCloud
-                      </a>
-                  </div>
-              </div>
-          </body>
-          </html>
+          <!DOCTYPE html><html><head><meta charset="UTF-8"><title>SonarCloud</title></head>
+          <body><h1>🎯 SonarCloud</h1>
+          <a href="https://sonarcloud.io/project/overview?id=doc-ai-project">Ver en SonarCloud</a>
+          </body></html>
           EOF
-
-      - name: Upload SonarCloud Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonar-reports
-          path: reports/sonar/
-          retention-days: 30
-
-      - name: Copy to docs
-        run: cp -r reports/sonar/* docs/reports/sonar/
+          echo "summary-path=reports/sonar/sonar-summary.html" >> $GITHUB_OUTPUT

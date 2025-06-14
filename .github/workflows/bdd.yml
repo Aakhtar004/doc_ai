@@ -6,8 +6,33 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+  workflow_call: {}
 
 jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    outputs:
+      summary-path: ${{ steps.summary.outputs.summary-path }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '18', cache: 'npm' }
+      - run: npm install
+
+      - name: Run BDD suite
+        run: |
+          mkdir -p reports/bdd
+          npx cucumber-js --format html:reports/bdd/index.html || true
+
+      - name: Generate BDD summary
+        id: summary
+        run: |
+          echo "summary-path=reports/bdd/index.html" >> $GITHUB_OUTPUT
+
   setup:
     runs-on: ubuntu-latest
     outputs:

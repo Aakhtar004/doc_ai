@@ -6,59 +6,40 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_call: {}
 
 jobs:
-  semgrep-analysis:
+  analysis:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       security-events: write
-
+    outputs:
+      json-path: ${{ steps.run.outputs.json-path }}
+      sarif-path: ${{ steps.run.outputs.sarif-path }}
+      summary-path: ${{ steps.summary.outputs.summary-path }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup semgrep reports
-        run: mkdir -p reports/semgrep docs/reports/semgrep
-
       - name: Run Semgrep analysis
+        id: run
         run: |
           python3 -m pip install semgrep
-          semgrep --config=auto --json --output=reports/semgrep/semgrep-results.json . || true
-          semgrep --config=auto --sarif --output=reports/semgrep/semgrep-results.sarif . || true
+          mkdir -p reports/semgrep
+          semgrep --config=auto --json --output=reports/semgrep/semgrep.json . || true
+          semgrep --config=auto --sarif --output=reports/semgrep/semgrep.sarif . || true
+          echo "json-path=reports/semgrep/semgrep.json" >> $GITHUB_OUTPUT
+          echo "sarif-path=reports/semgrep/semgrep.sarif" >> $GITHUB_OUTPUT
 
       - name: Generate Semgrep summary
+        id: summary
         run: |
           cat > reports/semgrep/semgrep-summary.html <<EOF
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Semgrep Security Analysis - DocAI</title>
-              <meta charset="UTF-8">
-              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-          </head>
-          <body>
-              <div class="container mt-4">
-                  <h1>🔎 Semgrep Security Analysis</h1>
-                  <p>Análisis estático de seguridad completado</p>
-                  <div class="alert alert-info">
-                      <h4>Reportes disponibles:</h4>
-                      <ul>
-                          <li><a href="semgrep-results.json">Resultados JSON</a></li>
-                          <li><a href="semgrep-results.sarif">Formato SARIF</a></li>
-                      </ul>
-                  </div>
-              </div>
-          </body>
-          </html>
+          <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Semgrep</title></head>
+          <body><h1>🔎 Semgrep Analysis</h1>
+          <ul>
+            <li><a href="semgrep.json">JSON</a></li>
+            <li><a href="semgrep.sarif">SARIF</a></li>
+          </ul></body></html>
           EOF
-
-      - name: Upload Semgrep Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: semgrep-reports
-          path: reports/semgrep/
-          retention-days: 30
-
-      - name: Copy to docs
-        run: cp -r reports/semgrep/* docs/reports/semgrep/
+          echo "summary-path=reports/semgrep/semgrep-summary.html" >> $GITHUB_OUTPUT

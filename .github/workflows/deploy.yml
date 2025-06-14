@@ -12,108 +12,84 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-deploy:
+  semgrep:
+    uses: ./.github/workflows/semgrep.yml
+
+  snyk:
+    uses: ./.github/workflows/snyk.yml
+
+  sonar:
+    uses: ./.github/workflows/sonar.yml
+
+  mutation:
+    uses: ./.github/workflows/mutation-testing.yml
+
+  stryker:
+    uses: ./.github/workflows/stryker.yml
+
+  bdd:
+    uses: ./.github/workflows/bdd.yml
+
+  deploy:
+    needs: [semgrep, snyk, sonar, mutation, stryker, bdd]
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
+      - name: Copy Semgrep results
         run: |
-          rm -f package-lock.json
-          npm install
+          mkdir -p docs/reports/semgrep
+          cp ${{ needs.semgrep.outputs.json-path }}    docs/reports/semgrep/ || true
+          cp ${{ needs.semgrep.outputs.sarif-path }}   docs/reports/semgrep/ || true
+          cp ${{ needs.semgrep.outputs.summary-path }}  docs/reports/semgrep/ || true
 
-      - name: Prepare docs structure
+      - name: Copy Snyk results
         run: |
-          mkdir -p docs/reports/semgrep \
-                   docs/reports/snyk \
-                   docs/reports/sonar \
-                   docs/reports/mutation \
-                   docs/reports/bdd
+          mkdir -p docs/reports/snyk
+          cp ${{ needs.snyk.outputs.deps-json }}      docs/reports/snyk/ || true
+          cp ${{ needs.snyk.outputs.code-json }}      docs/reports/snyk/ || true
+          cp ${{ needs.snyk.outputs.summary-path }}   docs/reports/snyk/ || true
 
-      - name: Download Semgrep Reports
-        uses: actions/download-artifact@v4
-        with:
-          name: semgrep-reports
-          path: temp-reports/semgrep
-
-      - name: Download Snyk Reports
-        uses: actions/download-artifact@v4
-        with:
-          name: snyk-reports
-          path: temp-reports/snyk
-
-      - name: Download SonarCloud Reports
-        uses: actions/download-artifact@v4
-        with:
-          name: sonar-reports
-          path: temp-reports/sonar
-
-      - name: Download Mutation Reports
-        uses: actions/download-artifact@v4
-        with:
-          name: mutation-reports
-          path: temp-reports/mutation
-
-      - name: Download BDD Unit Report
-        uses: actions/download-artifact@v4
-        with:
-          name: bdd-unit-report
-          path: temp-reports/bdd/unit
-
-      - name: Download BDD Integration Report
-        uses: actions/download-artifact@v4
-        with:
-          name: bdd-integration-report
-          path: temp-reports/bdd/integration
-
-      - name: Download BDD UI Report
-        uses: actions/download-artifact@v4
-        with:
-          name: bdd-ui-report
-          path: temp-reports/bdd/ui
-
-      - name: Copy all reports into docs
+      - name: Copy Sonar summary
         run: |
-          cp -R temp-reports/semgrep/* docs/reports/semgrep/ || true
-          cp -R temp-reports/snyk/*    docs/reports/snyk/    || true
-          cp -R temp-reports/sonar/*   docs/reports/sonar/   || true
-          cp -R temp-reports/mutation/*docs/reports/mutation/|| true
-          cp -R temp-reports/bdd/*     docs/reports/bdd/     || true
+          mkdir -p docs/reports/sonar
+          cp ${{ needs.sonar.outputs.summary-path }}  docs/reports/sonar/ || true
 
-      - name: Generate main dashboard markdown
+      - name: Copy Mutation summary
+        run: |
+          mkdir -p docs/reports/mutation
+          cp ${{ needs.mutation.outputs.summary-path }}  docs/reports/mutation/ || true
+          cp ${{ needs.stryker.outputs.summary-path }}   docs/reports/mutation/ || true
+
+      - name: Copy BDD summary
+        run: |
+          mkdir -p docs/reports/bdd
+          cp ${{ needs.bdd.outputs.summary-path }} docs/reports/bdd/ || true
+
+      - name: Generate docs/index.md
         run: |
           cat > docs/index.md <<EOF
           ---
           layout: default
-          title: DocAI - Dashboard de Reportes
+          title: DocAI Dashboard
           ---
-          
-          # 📊 DocAI - Dashboard de Reportes de Calidad
-          
-          ## 🎯 Reportes Disponibles
-          - 🛡️ [Semgrep](reports/semgrep/semgrep-summary.html)
+          # 📊 DocAI - Dashboard de Reportes
+          - 🔎 [Semgrep](reports/semgrep/semgrep-summary.html)
           - 🛡️ [Snyk](reports/snyk/snyk-summary.html)
           - 🎯 [SonarCloud](reports/sonar/sonar-summary.html)
-          - 🧬 [Mutation Testing](reports/mutation/mutation-summary.html)
-          - 🧪 [BDD Tests](reports/bdd/index.html)
-          
-          *Dashboard actualizado automáticamente por GitHub Actions*
+          - 🧬 [Mutation](reports/mutation/mutation-summary.html)
+          - 🧬 [Stryker](reports/mutation/mutation-summary.html)
+          - 🧪 [BDD](reports/bdd/index.html)
           EOF
 
-      - name: Disable Jekyll processing
+      - name: Disable Jekyll
         run: touch docs/.nojekyll
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
           publish_dir: docs
           force_orphan: true

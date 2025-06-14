@@ -5,80 +5,41 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_call: {}
 
 jobs:
-  snyk-analysis:
+  analysis:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    outputs:
+      deps-json: ${{ steps.run.outputs.deps-json }}
+      code-json: ${{ steps.run.outputs.code-json }}
+      summary-path: ${{ steps.summary.outputs.summary-path }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
-
-      - name: Setup snyk reports
-        run: mkdir -p reports/snyk docs/reports/snyk
-
-      - name: Snyk Dependencies Test
-        continue-on-error: true
-        run: |
-          npm install -g snyk || true
-          snyk test --json > reports/snyk/snyk-dependencies.json || echo '{"vulnerabilities":[], "summary":"No vulnerabilities found"}' > reports/snyk/snyk-dependencies.json
-          snyk test --sarif > reports/snyk/snyk-dependencies.sarif || echo '{"runs":[{"results":[]}]}' > reports/snyk/snyk-dependencies.sarif
+      - name: Run Snyk tests
+        id: run
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-      - name: Snyk Code Analysis
-        continue-on-error: true
         run: |
-          snyk code test --json > reports/snyk/snyk-code.json || echo '{"vulnerabilities":[], "summary":"No code issues found"}' > reports/snyk/snyk-code.json
-          snyk code test --sarif > reports/snyk/snyk-code.sarif || echo '{"runs":[{"results":[]}]}' > reports/snyk/snyk-code.sarif
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          npm install -g snyk
+          mkdir -p reports/snyk
+          snyk test --json > reports/snyk/snyk-deps.json || echo '{}' > reports/snyk/snyk-deps.json
+          snyk code test --json > reports/snyk/snyk-code.json || echo '{}' > reports/snyk/snyk-code.json
+          echo "deps-json=reports/snyk/snyk-deps.json" >> $GITHUB_OUTPUT
+          echo "code-json=reports/snyk/snyk-code.json" >> $GITHUB_OUTPUT
 
       - name: Generate Snyk summary
+        id: summary
         run: |
           cat > reports/snyk/snyk-summary.html <<EOF
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Snyk Security Analysis - DocAI</title>
-              <meta charset="UTF-8">
-              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-          </head>
-          <body>
-              <div class="container mt-4">
-                  <h1>🛡️ Snyk Security Analysis</h1>
-                  <p>Análisis de vulnerabilidades completado</p>
-                  <div class="alert alert-success">
-                      <h4>Reportes disponibles:</h4>
-                      <ul>
-                          <li><a href="snyk-dependencies.json">Dependencias (JSON)</a></li>
-                          <li><a href="snyk-code.json">Código (JSON)</a></li>
-                          <li><a href="snyk-dependencies.sarif">Dependencias (SARIF)</a></li>
-                          <li><a href="snyk-code.sarif">Código (SARIF)</a></li>
-                      </ul>
-                  </div>
-              </div>
-          </body>
-          </html>
+          <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Snyk</title></head>
+          <body><h1>🛡️ Snyk Analysis</h1>
+          <ul>
+            <li><a href="snyk-deps.json">Dependencias</a></li>
+            <li><a href="snyk-code.json">Código</a></li>
+          </ul></body></html>
           EOF
-
-      - name: Upload Snyk Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-reports
-          path: reports/snyk/
-          retention-days: 30
-
-      - name: Copy to docs
-        run: cp -r reports/snyk/* docs/reports/snyk/
+          echo "summary-path=reports/snyk/snyk-summary.html" >> $GITHUB_OUTPUT
