@@ -38,6 +38,12 @@ jobs:
             <li><a href="snyk-code.json">Código</a></li>
           </ul></body></html>
           EOF
+          
+      - name: Sync with remote main (rebase)
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git pull --rebase origin main || true
 
       - name: Commit Snyk report
         uses: stefanzweifel/git-auto-commit-action@v4

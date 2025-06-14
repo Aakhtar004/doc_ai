@@ -17,6 +17,12 @@ jobs:
         with: { node-version: '18', cache: 'npm' }
       - run: npm install --save-dev @stryker-mutator/core @stryker-mutator/jest-runner || true
 
+      - name: Sync with remote main (rebase)
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git pull --rebase origin main || true
+
       - name: Generate Stryker summary
         id: summary
         run: |
