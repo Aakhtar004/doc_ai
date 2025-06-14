@@ -60,7 +60,7 @@
           <div class="card-body">
             <h5 class="card-title">🧬 Pruebas de Mutación</h5>
             <p class="card-text">Calidad de tests y score de mutantes.</p>
-            <a href="reports/mutation/mutation-summary.html" class="btn btn-outline-primary">Ver Mutación</a>
+            <a href="reports/mutation/index.html" class="btn btn-outline-primary">Ver Mutación</a>
           </div>
         </div>
       </div>
@@ -73,9 +73,20 @@
           </div>
         </div>
       </div>
+      <div class="col-sm-6 col-lg-4">
+        <div class="card report-card h-100">
+          <div class="card-body">
+            <h5 class="card-title">📊 Cobertura de Pruebas</h5>
+            <p class="card-text">Reporte de cobertura de código por Jest.</p>
+            <a href="reports/coverage/index.html" class="btn btn-outline-primary">Ver Cobertura</a>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
   <footer class="text-center py-4 mt-5 bg-white">
     <small>Dashboard generado automáticamente por GitHub Actions • Última actualización: {{timestamp}}</small>
   </footer>
+</body>
+</html>

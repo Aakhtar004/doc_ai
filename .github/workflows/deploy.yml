@@ -10,6 +10,7 @@ on:
       - "Stryker Report"            # Elemento de la lista
       - "Mutation Testing"          # Elemento de la lista
       - "BDD Tests"                 # Elemento de la lista
+      - "Test and Coverage Report"  # Elemento de la lista
     types:
       - completed
     branches: [main]

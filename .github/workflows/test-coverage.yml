@@ -1,0 +1,70 @@
+name: Test and Coverage Report
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test_and_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Coincide con tu package.json engines
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests and generate coverage
+        # Tu script 'test:coverage' ya está configurado en package.json
+        # Usamos '|| true' para asegurar que el reporte se genere incluso si alguna prueba falla,
+        # aunque idealmente las pruebas deberían pasar.
+        run: npm run test:coverage || true
+
+      - name: Create coverage reports directory in docs
+        run: mkdir -p docs/reports/coverage
+
+      - name: Copy coverage report to docs
+        # Jest con la configuración 'html' reporter usualmente crea 'coverage/index.html'
+        # o 'coverage/lcov-report/index.html'.
+        # Este comando intenta copiar el contenido de la carpeta de cobertura.
+        run: |
+          if [ -d "coverage/lcov-report" ]; then
+            cp -R coverage/lcov-report/* docs/reports/coverage/
+            echo "Copied lcov-report to docs/reports/coverage/"
+          elif [ -f "coverage/index.html" ]; then
+            # Si index.html está en la raíz de coverage, copia todo el contenido de coverage
+            # Necesitamos tener cuidado de no copiar subdirectorios no deseados si existen otros reporters.
+            # Por ahora, asumimos que 'coverage/index.html' es el principal y copiamos todo.
+            cp -R coverage/* docs/reports/coverage/
+            echo "Copied contents of coverage/ to docs/reports/coverage/"
+          else
+            echo "Coverage HTML report not found at expected locations (coverage/index.html or coverage/lcov-report/index.html)."
+            # Crear un archivo placeholder si no se encuentra el reporte
+            echo "<!DOCTYPE html><html><head><title>Reporte no encontrado</title></head><body><h1>Reporte de cobertura no disponible.</h1></body></html>" > docs/reports/coverage/index.html
+          fi
+
+      - name: Sync with remote main (rebase)
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git pull --rebase origin main || true
+
+      - name: Commit coverage report
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: main
+          commit_message: "ci: update test coverage report"
+          file_pattern: docs/reports/coverage/**
+          # No push_options: --force aquí

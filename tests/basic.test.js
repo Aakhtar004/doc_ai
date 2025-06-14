@@ -33,11 +33,21 @@ describe('Basic test setup for Doc AI', () => {
     const fs = require('fs');
     expect(fs.existsSync('public')).toBe(true);
     expect(fs.existsSync('public/js/main.js')).toBe(true);
+    expect(fs.existsSync('routes/auth.js')).toBe(true);
+    expect(fs.existsSync('services/db.js')).toBe(true);
   });
 
-  test('should have working configuration', () => {
+  test('should have working configuration scripts in package.json', () => {
     const packageJson = require('../package.json');
     expect(packageJson.scripts).toHaveProperty('test');
     expect(packageJson.scripts).toHaveProperty('start');
+    expect(packageJson.scripts).toHaveProperty('test:coverage');
+  });
+
+  test('server.cjs debería exportar una instancia de app de Express (o iniciarla)', () => {
+    const fs = require('fs');
+    const serverContent = fs.readFileSync('server.cjs', 'utf-8');
+    expect(serverContent).toContain("express()");
+    expect(serverContent).toContain("app.listen");
   });
 });
