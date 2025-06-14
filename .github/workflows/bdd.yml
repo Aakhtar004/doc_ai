@@ -14,16 +14,16 @@ jobs:
       test-report-path: ${{ steps.prepare.outputs.report-path }}
     steps:
       - uses: actions/checkout@v4
-      - name: 🔧 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
-      - name: 📁 Prepare test structure
+      - name: Prepare test structure
         id: prepare
         run: |
           mkdir -p reports/bdd/{unit,integration,ui}
@@ -38,12 +38,12 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
-      
-      - name: 🧪 Run unit BDD tests
+
+      - name: Run unit BDD tests
         run: |
           mkdir -p reports/bdd/unit
           npm run test:coverage || true
@@ -52,7 +52,7 @@ jobs:
           fi
           echo '{"status": "passed", "scenarios": 2, "type": "unit"}' > reports/bdd/unit/results.json
 
-      - name: 📤 Upload Unit Report
+      - name: Upload Unit Report
         uses: actions/upload-artifact@v4
         with:
           name: bdd-unit-report
@@ -67,18 +67,18 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
-      
-      - name: 🔗 Run integration BDD tests
+
+      - name: Run integration BDD tests
         run: |
           mkdir -p reports/bdd/integration
           echo "Integration tests completed" > reports/bdd/integration/test.log
           echo '{"status": "passed", "scenarios": 2, "type": "integration"}' > reports/bdd/integration/results.json
 
-      - name: 📤 Upload Integration Report
+      - name: Upload Integration Report
         uses: actions/upload-artifact@v4
         with:
           name: bdd-integration-report
@@ -93,18 +93,18 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
-      
-      - name: 🎨 Run UI BDD tests
+
+      - name: Run UI BDD tests
         run: |
           mkdir -p reports/bdd/ui
           echo "UI tests completed" > reports/bdd/ui/test.log
           echo '{"status": "passed", "scenarios": 2, "type": "ui"}' > reports/bdd/ui/results.json
 
-      - name: 📤 Upload UI Report
+      - name: Upload UI Report
         uses: actions/upload-artifact@v4
         with:
           name: bdd-ui-report
@@ -120,18 +120,17 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: 📥 Download all BDD reports
+
+      - name: Download all BDD reports
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          
-      - name: 📊 Consolidate BDD reports
+
+      - name: Consolidate BDD reports
         run: |
           mkdir -p docs/reports/bdd
           find artifacts -type f \( -name "*.json" -o -name "*.html" -o -name "*.log" \) -exec cp {} docs/reports/bdd/ \; 2>/dev/null || true
-          
-          cat > docs/reports/bdd/index.html << 'EOF'
+          cat > docs/reports/bdd/index.html <<EOF
           <!DOCTYPE html>
           <html>
           <head>
@@ -143,7 +142,6 @@ jobs:
               <div class="container mt-4">
                   <h1>🧪 BDD Test Results</h1>
                   <p class="lead">Behavior-Driven Development test suite for DocAI</p>
-                  
                   <div class="row">
                       <div class="col-md-4">
                           <div class="card">
@@ -173,7 +171,6 @@ jobs:
                           </div>
                       </div>
                   </div>
-                  
                   <div class="mt-4">
                       <h3>📊 Test Summary</h3>
                       <ul class="list-group">
@@ -199,10 +196,13 @@ jobs:
           </body>
           </html>
           EOF
-          
-      - name: 🚀 Commit & Push to gh-pages
+
+      - name: Commit & Push to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          keep_files: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
           keep_files: true

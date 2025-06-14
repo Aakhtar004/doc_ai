@@ -10,38 +10,39 @@ on:
 jobs:
   sonar-analysis:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
-      - name: 📦 Install dependencies
+
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
 
-      - name: 📁 Setup sonar reports
+      - name: Setup sonar reports
         run: mkdir -p reports/sonar docs/reports/sonar
 
-      - name: 🧪 Run tests for SonarCloud
+      - name: Run tests for SonarCloud
         run: npm run test:coverage || true
 
-      - name: 🎯 SonarCloud Scan
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         continue-on-error: true
 
-      - name: 📊 Generate SonarCloud summary
+      - name: Generate SonarCloud summary
         run: |
-          cat > reports/sonar/sonar-summary.html << 'EOF'
+          cat > reports/sonar/sonar-summary.html <<EOF
           <!DOCTYPE html>
           <html>
           <head>
@@ -65,17 +66,17 @@ jobs:
           </html>
           EOF
 
-      - name: 📤 Upload SonarCloud Reports
+      - name: Upload SonarCloud Reports
         uses: actions/upload-artifact@v4
         with:
           name: sonar-reports
           path: reports/sonar/
           retention-days: 30
 
-      - name: 📂 Copy to docs
+      - name: Copy to docs
         run: cp -r reports/sonar/* docs/reports/sonar/
 
-      - name: 🚀 Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

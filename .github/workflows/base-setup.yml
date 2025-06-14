@@ -16,22 +16,22 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
           cache: 'npm'
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
-          npm ci
 
-      - name: 📁 Create reports structure
+      - name: Create reports structure
         run: |
           mkdir -p ${{ inputs.reports-dir }}
+          mkdir -p docs/reports
           mkdir -p docs/reports

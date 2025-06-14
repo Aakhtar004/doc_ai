@@ -10,24 +10,25 @@ on:
 jobs:
   snyk-analysis:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
-      - name: 📦 Install dependencies
+
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
 
-      - name: 📁 Setup snyk reports
+      - name: Setup snyk reports
         run: mkdir -p reports/snyk docs/reports/snyk
 
-      - name: 🛡️ Snyk Dependencies Test
+      - name: Snyk Dependencies Test
         continue-on-error: true
         run: |
           npm install -g snyk || true
@@ -36,7 +37,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: 💻 Snyk Code Analysis
+      - name: Snyk Code Analysis
         continue-on-error: true
         run: |
           snyk code test --json > reports/snyk/snyk-code.json || echo '{"vulnerabilities":[], "summary":"No code issues found"}' > reports/snyk/snyk-code.json
@@ -44,9 +45,9 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: 📊 Generate Snyk summary
+      - name: Generate Snyk summary
         run: |
-          cat > reports/snyk/snyk-summary.html << 'EOF'
+          cat > reports/snyk/snyk-summary.html <<EOF
           <!DOCTYPE html>
           <html>
           <head>
@@ -72,17 +73,17 @@ jobs:
           </html>
           EOF
 
-      - name: 📤 Upload Snyk Reports
+      - name: Upload Snyk Reports
         uses: actions/upload-artifact@v4
         with:
           name: snyk-reports
           path: reports/snyk/
           retention-days: 30
 
-      - name: 📂 Copy to docs
+      - name: Copy to docs
         run: cp -r reports/snyk/* docs/reports/snyk/
 
-      - name: 🚀 Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -18,29 +18,29 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
 
-      - name: 🏗️ Build application
+      - name: Build application
         run: |
           mkdir -p docs/reports/{semgrep,snyk,sonar,bdd,mutation}
-          
-      - name: 📄 Generate main dashboard
+
+      - name: Generate main dashboard
         run: |
-          cat > docs/index.md << 'EOF'
+          cat > docs/index.md <<EOF
           # 📊 DocAI - Dashboard de Reportes de Calidad
 
           Bienvenido al dashboard centralizado de reportes de calidad para **DocAI**.
@@ -66,7 +66,7 @@ jobs:
           *Dashboard actualizado automáticamente por GitHub Actions*
           EOF
 
-      - name: 🚀 Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
