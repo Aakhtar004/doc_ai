@@ -9,7 +9,9 @@
     "test:coverage": "jest --coverage --passWithNoTests",
     "lint": "echo 'Linting completed'",
     "build": "echo 'Build completed'",
-    "deploy": "echo 'Deploy to production'"
+    "deploy": "echo 'Deploy to production'",
+    "test:bdd": "cucumber-js --format json:docs/reports/bdd/cucumber-report.json --format html:docs/reports/bdd/index.html",
+    "test:bdd:watch": "cucumber-js --watch"
   },
   "dependencies": {
     "@google/generative-ai": "^0.19.0",
@@ -21,10 +23,11 @@
     "express-session": "^1.18.1"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^10.8.0",
+    "@cucumber/cucumber": "^10.9.0",
+    "chai": "^4.3.7",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
-    "supertest": "^7.1.1"
+    "supertest": "^6.3.3"
   },
   "engines": {
     "node": ">=18.0.0"

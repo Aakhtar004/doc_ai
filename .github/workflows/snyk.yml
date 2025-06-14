@@ -91,15 +91,25 @@ jobs:
 
           # Contar vulnerabilidades basándose en palabras clave en el texto
           def count_vulnerabilities(content):
-              if "No vulnerabilities found" in content or "No issues found" in content:
-                  return 0
-              # Contar líneas que contienen información de vulnerabilidades
-              lines = content.split('\n')
               vuln_count = 0
+              lines = content.split('\n')
               for line in lines:
-                  if any(keyword in line.lower() for keyword in ['vulnerability', 'issue', 'severity:', 'problem']):
+                  # Buscar líneas que indican vulnerabilidades
+                  if line.strip().startswith('✗') and ('[' in line and ']' in line):
                       vuln_count += 1
-              return max(vuln_count, 1) if vuln_count > 0 else 0
+                  # También buscar el resumen al final
+                  elif 'Code issues found' in line:
+                      # Extraer número del formato "25 Code issues found"
+                      parts = line.split()
+                      if len(parts) > 0 and parts[0].isdigit():
+                          vuln_count = max(vuln_count, int(parts[0]))
+                  elif 'found' in line and 'issue' in line:
+                      # Para dependencias: "found 1 issue"
+                      import re
+                      match = re.search(r'found (\d+) issue', line)
+                      if match:
+                          vuln_count = max(vuln_count, int(match.group(1)))
+              return vuln_count
 
           dep_vuln_count = count_vulnerabilities(deps_content)
           code_vuln_count = count_vulnerabilities(code_content)

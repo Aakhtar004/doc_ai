@@ -10,16 +10,68 @@ permissions:
 jobs:
   analysis:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '18', cache: 'npm' }
 
-      - name: Run BDD suite
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Cucumber and prepare folder
         run: |
           npm install --save-dev @cucumber/cucumber
           mkdir -p docs/reports/bdd
-          npx cucumber-js --format html:docs/reports/bdd/index.html || true
+
+      - name: Run BDD suite (HTML + JSON)
+        run: |
+          npx cucumber-js \
+            --format html:docs/reports/bdd/index.html \
+            --format json:docs/reports/bdd/cucumber-report.json || true
+
+      - name: Generate BDD summary
+        run: |
+          node -e "
+          const fs = require('fs');
+          try {
+            const report = JSON.parse(fs.readFileSync('docs/reports/bdd/cucumber-report.json'));
+
+            let totalScenarios = 0;
+            let passedScenarios = 0;
+
+            report.forEach(feature => {
+              (feature.elements || []).forEach(scenario => {
+                totalScenarios++;
+                const allStepsPassed = scenario.steps.every(step =>
+                  step.result && step.result.status === 'passed'
+                );
+                if (allStepsPassed) passedScenarios++;
+              });
+            });
+
+            const percentage = totalScenarios > 0 ? Math.round((passedScenarios / totalScenarios) * 100) : 0;
+
+            const summary = {
+              total: totalScenarios,
+              passed: passedScenarios,
+              failed: totalScenarios - passedScenarios,
+              percentage: percentage,
+              timestamp: new Date().toISOString()
+            };
+
+            fs.writeFileSync('docs/reports/bdd/scenarios-summary.json', JSON.stringify(summary, null, 2));
+            console.log(\`BDD Results: \${passedScenarios}/\${totalScenarios} scenarios passed (\${percentage}%)\`);
+          } catch(e) {
+            console.error('Error generating summary:', e.message);
+            const summary = {
+              total: 0, passed: 0, failed: 0, percentage: 0,
+              error: e.message,
+              timestamp: new Date().toISOString()
+            };
+            fs.writeFileSync('docs/reports/bdd/scenarios-summary.json', JSON.stringify(summary, null, 2));
+          }
+          "
 
       - name: Sync with remote main (rebase)
         run: |
