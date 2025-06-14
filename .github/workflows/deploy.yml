@@ -87,10 +87,11 @@ jobs:
       - name: Disable Jekyll
         run: touch docs/.nojekyll
 
-      - name: Deploy to gh-pages
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: docs
+          publish_branch: gh-pages    # rama destino
+          publish_dir: docs           # carpeta local que generas
+          destination_dir: docs       # carpeta dentro de gh-pages
           force_orphan: true
