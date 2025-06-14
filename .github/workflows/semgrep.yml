@@ -22,18 +22,40 @@ jobs:
       - name: Run Semgrep
         run: |
           mkdir -p docs/reports/semgrep
-          semgrep --config=auto --json --output docs/reports/semgrep/semgrep.json . || true
-          semgrep --config=auto --sarif --output docs/reports/semgrep/semgrep.sarif . || true
+          semgrep --config=auto --json --output docs/reports/semgrep/semgrep-results.json . || true
+          semgrep --config=auto --sarif --output docs/reports/semgrep/semgrep-results.sarif . || true
 
-      - name: Generate Semgrep summary
+      - name: Generate Semgrep summary page
         run: |
           cat > docs/reports/semgrep/semgrep-summary.html <<EOF
-          <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Semgrep</title></head>
-          <body><h1>🔎 Semgrep Analysis</h1>
-          <ul>
-            <li><a href="semgrep.json">JSON</a></li>
-            <li><a href="semgrep.sarif">SARIF</a></li>
-          </ul></body></html>
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+              <meta charset="UTF-8">
+              <title>Semgrep Analysis Report</title>
+              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+              <style>body { padding: 20px; }</style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1 class="mb-4">🔎 Semgrep - Reporte de Análisis Estático de Seguridad</h1>
+                  <p>Semgrep ha analizado el código fuente en busca de patrones de seguridad.</p>
+                  <div class="alert alert-info">
+                      <h4 class="alert-heading">Resultados Detallados</h4>
+                      <p>Los resultados completos del análisis están disponibles en los siguientes formatos:</p>
+                      <ul>
+                          <li><a href="semgrep-results.json" class="alert-link">Resultados en formato JSON</a></li>
+                          <li><a href="semgrep-results.sarif" class="alert-link">Resultados en formato SARIF</a></li>
+                      </ul>
+                      <hr>
+                      <p class="mb-0">
+                          <strong>Nota:</strong> El archivo SARIF (<code>semgrep-results.sarif</code>) puede ser cargado en la pestaña 'Security' > 'Code scanning alerts' de tu repositorio en GitHub para una visualización interactiva de las alertas, siempre que el workflow tenga permisos de <code>security-events: write</code> y se configure el paso de subida de SARIF.
+                      </p>
+                  </div>
+                  <a href="../../index.html" class="btn btn-primary mt-3">Volver al Dashboard Principal</a>
+              </div>
+          </body>
+          </html>
           EOF
           
       - name: Sync with remote main (rebase)
@@ -46,5 +68,5 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           branch: main
-          commit_message: "ci: update Semgrep report"
+          commit_message: "ci: update Semgrep report and summary"
           file_pattern: docs/reports/semgrep/**
