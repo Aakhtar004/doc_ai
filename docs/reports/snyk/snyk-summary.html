@@ -1,6 +1,27 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Snyk</title></head>
-<body><h1>🛡️ Snyk Security</h1>
-<ul>
-  <li><a href="snyk-deps.json">Dependencias</a></li>
-  <li><a href="snyk-code.json">Código</a></li>
-</ul></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"><title>Snyk Security Summary</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>body { padding: 20px; }</style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">🛡️ Snyk - Resumen de Seguridad</h1>
+        <p>Resultados del análisis de vulnerabilidades en dependencias y código.</p>
+        <div class="list-group">
+            <a href="snyk-detailed-report.html" class="list-group-item list-group-item-action active">
+                Ver Reporte HTML Detallado de Vulnerabilidades (Parseado)
+            </a>
+            <a href="snyk-dependencies-native-report.html" class="list-group-item list-group-item-action">Reporte HTML Nativo de Dependencias (Snyk)</a>
+            <a href="snyk-code-native-report.html" class="list-group-item list-group-item-action">Reporte HTML Nativo de Código (Snyk)</a>
+        </div>
+        <p class="mt-3">Archivos JSON originales (usados para el reporte parseado):</p>
+        <ul>
+            <li><a href="snyk-dependencies.json">Dependencias (JSON)</a></li>
+            <li><a href="snyk-code.json">Código (JSON)</a></li>
+        </ul>
+        <a href="../../index.html" class="btn btn-primary mt-3">Volver al Dashboard Principal</a>
+    </div>
+</body>
+</html>
