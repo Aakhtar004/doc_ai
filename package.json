@@ -7,13 +7,14 @@
     "npm": "10.x"
   },
   "scripts": {
-    "test": "jest --coverage",
-    "lint": "eslint .",
     "start": "node server.cjs",
-    "dev": "node server.cjs",
-    "build": "echo 'Build complete'",
-    "bdd": "cucumber-js --publish-quiet",
-    "heroku-postbuild": "echo 'Post build complete'"
+    "test": "jest",
+    "test:coverage": "jest --coverage --coverageThreshold.global.lines=70",
+    "test:mutation": "stryker run",
+    "bdd": "cucumber-js",
+    "lint": "eslint .",
+    "build": "echo 'Build completed'",
+    "deploy": "echo 'Deploy to production'"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +30,8 @@
   },
   "devDependencies": {
     "@cucumber/cucumber": "^11.3.0",
+    "@stryker-mutator/core": "^8.0.0",
+    "@stryker-mutator/jest-runner": "^8.0.0",
     "eslint": "^9.28.0",
     "jest": "^30.0.0"
   },

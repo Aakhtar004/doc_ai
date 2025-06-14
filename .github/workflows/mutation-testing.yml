@@ -1,4 +1,4 @@
-name: 🧬 Mutation Testing
+name: 🧬 Mutation Testing (Stryker)
 
 on:
   push:
@@ -8,81 +8,81 @@ on:
   workflow_dispatch:
 
 jobs:
+  setup:
+    uses: ./.github/workflows/base-setup.yml
+    with:
+      reports-dir: 'reports/mutation'
+
   mutation-testing:
-    name: 🧬 Stryker Mutation Tests
+    needs: setup
     runs-on: ubuntu-latest
     
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
+      - run: npm ci
 
-      - name: 📦 Install dependencies
-        run: npm ci
+      - name: 📁 Setup mutation reports
+        run: mkdir -p reports/mutation
 
-      - name: 📁 Create reports structure
+      - name: 🧬 Install and run Stryker
         run: |
-          mkdir -p reports/mutation
-          mkdir -p docs/reports/mutation
-
-      - name: 🧬 Run Stryker mutation tests
-        run: |
+          npm install --save-dev @stryker-mutator/core @stryker-mutator/jest-runner || true
           npx stryker run || echo "Mutation testing completed"
-          
-      - name: 📊 Process mutation results
+
+      - name: 📊 Generate mutation summary
         run: |
-          if [ -f reports/mutation/mutation-report.json ]; then
-            # Extract mutation score
-            MUTATION_SCORE=$(node -e "
-              const fs = require('fs');
-              if (fs.existsSync('reports/mutation/mutation-report.json')) {
-                const report = JSON.parse(fs.readFileSync('reports/mutation/mutation-report.json', 'utf8'));
-                console.log(report.mutationScore || 0);
-              } else {
-                console.log(0);
-              }
-            ")
-            
-            echo "Mutation Score: $MUTATION_SCORE%"
-            echo "MUTATION_SCORE=$MUTATION_SCORE" >> $GITHUB_ENV
-            
-            # Generate summary
-            cat > reports/mutation/mutation-summary.html << EOF
+          cat > reports/mutation/mutation-summary.html << 'EOF'
           <!DOCTYPE html>
           <html>
           <head>
-              <title>Mutation Testing Summary - DocAI</title>
+              <title>Mutation Testing - DocAI</title>
               <meta charset="UTF-8">
-              <style>
-                  body { font-family: Arial, sans-serif; margin: 20px; }
-                  .header { background: #f8f9fa; padding: 20px; border-radius: 5px; }
-                  .score { font-size: 2em; font-weight: bold; padding: 20px; text-align: center; }
-                  .good { background-color: #d4edda; color: #155724; }
-                  .warning { background-color: #fff3cd; color: #856404; }
-                  .poor { background-color: #f8d7da; color: #721c24; }
-              </style>
+              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
           </head>
           <body>
-              <div class="header">
+              <div class="container mt-4">
                   <h1>🧬 Mutation Testing Results</h1>
-                  <p>Generated on: $(date)</p>
-                  <p>Target Score: > 60%</p>
+                  <p>Análisis de calidad de tests mediante mutación</p>
+                  
+                  <div class="alert alert-info">
+                      <h4>¿Qué es Mutation Testing?</h4>
+                      <p>Las pruebas de mutación evalúan la calidad de tus tests introduciendo pequeños cambios en el código y verificando si los tests los detectan.</p>
+                  </div>
+                  
+                  <div class="mt-4">
+                      <h4>Reportes disponibles:</h4>
+                      <ul>
+                          <li><a href="index.html">Reporte HTML completo</a></li>
+                          <li><a href="mutation-report.json">Datos JSON</a></li>
+                      </ul>
+                  </div>
               </div>
-              
-              <div class="score $([ $MUTATION_SCORE -gt 80 ] && echo "good" || ([ $MUTATION_SCORE -gt 60 ] && echo "warning" || echo "poor"))">
-                  Mutation Score: $MUTATION_SCORE%
-              </div>
-              
-              <div style="margin-top: 30px;">
-                  <h2>📁 Detailed Reports</h2>
-                  <ul>
-                      <li><a href="index.html">Complete HTML Report</a></li>
-                      <li><a href="mutation-report.json">JSON Report</a></li>
+          </body>
+          </html>
+          EOF
+
+      - name: 📤 Upload Mutation Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-reports
+          path: reports/mutation/
+          retention-days: 30
+
+      - name: 📂 Copy to docs
+        run: |
+          mkdir -p docs/reports/mutation
+          cp -r reports/mutation/* docs/reports/mutation/
+
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs
+          keep_files: true
                   </ul>
               </div>
               

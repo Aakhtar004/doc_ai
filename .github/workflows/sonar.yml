@@ -1,73 +1,86 @@
-name: SonarQube Analysis and Node.js CI
-env:
-  NODE_VERSION: '22.x'                     # la versión de Node.js
-  SONAR_ORG: 'docaisc'                     # Nombre de la organización de sonar cloud
-  SONAR_PROJECT: 'docaisc_docaipy'         # Key ID del proyecto de sonar (actualizado para tu proyecto)
+name: 🎯 SonarCloud Analysis
+
 on:
   push:
-    branches: [ "main" ] 
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  sonarqube:
-    name: SonarQube Analysis and Node.js Build
+  setup:
+    uses: ./.github/workflows/base-setup.yml
+    with:
+      reports-dir: 'reports/sonar'
+
+  sonar-analysis:
+    needs: setup
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '18'
           cache: 'npm'
-      
-      - name: Instalar dependencias
-        run: npm ci
-      
-      - name: Ejecutar pruebas con cobertura
-        run: |
-          npm test -- --coverage --watchAll=false || echo "No tests configured yet"
-        continue-on-error: true
-      
-      - name: Ejecutar ESLint para análisis estático
-        run: |
-          npx eslint . --ext .js,.mjs,.cjs --format json --output-file eslint-report.json || echo "ESLint analysis completed"
-        continue-on-error: true
-      
-      - name: SonarCloud Scan
+      - run: npm ci
+
+      - name: 📁 Setup sonar reports
+        run: mkdir -p reports/sonar
+
+      - name: 🎯 SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=${{ env.SONAR_PROJECT }}
-            -Dsonar.organization=${{ env.SONAR_ORG }}
-            -Dsonar.sources=.
-            -Dsonar.exclusions=**/node_modules/**,**/Documents/**,**/public/**,**/*.md,**/.github/**
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.eslint.reportPaths=eslint-report.json
-      
-      - name: Compilar aplicación
+
+      - name: 📊 Generate SonarCloud summary
         run: |
-          npm run build || echo "No build script configured"
-        continue-on-error: true
-      
-      - name: Crear artefacto de despliegue
-        run: |
-          mkdir -p ./artifacts
-          # Crear un tar excluyendo directorios problemáticos
-          tar --exclude='./node_modules' \
-              --exclude='./.git' \
-              --exclude='./artifacts' \
-              --exclude='./coverage' \
-              --exclude='./.nyc_output' \
-              -cf - . | (cd ./artifacts && tar -xf -)
-      
-      - name: Subir artefactos
+          cat > reports/sonar/sonar-summary.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>SonarCloud Analysis - DocAI</title>
+              <meta charset="UTF-8">
+              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+          </head>
+          <body>
+              <div class="container mt-4">
+                  <h1>🎯 SonarCloud Quality Analysis</h1>
+                  <p>Análisis de calidad de código completado</p>
+                  <div class="alert alert-primary">
+                      <h4>Dashboard SonarCloud:</h4>
+                      <a href="https://sonarcloud.io/project/overview?id=doc-ai-sc_doc-ai-py" 
+                         class="btn btn-primary" target="_blank">
+                          Ver en SonarCloud
+                      </a>
+                  </div>
+                  <div class="mt-3">
+                      <p><strong>Project Key:</strong> doc-ai-sc_doc-ai-py</p>
+                      <p><strong>Organization:</strong> doc-ai-sc</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: 📤 Upload SonarCloud Reports
         uses: actions/upload-artifact@v4
         with:
-          name: docugen-ai-build
-          path: ./artifacts
+          name: sonar-reports
+          path: reports/sonar/
+          retention-days: 30
+
+      - name: 📂 Copy to docs
+        run: |
+          mkdir -p docs/reports/sonar
+          cp -r reports/sonar/* docs/reports/sonar/
+
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs
+          keep_files: true

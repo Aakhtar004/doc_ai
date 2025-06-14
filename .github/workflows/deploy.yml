@@ -1,76 +1,76 @@
 # .github/workflows/deploy.yml
-name: Dashboard Unificado - Recopilación de Análisis
+name: 🚀 Deploy to GitHub Pages
 
 on:
-  workflow_run:
-    workflows: ["SonarQube Analysis and Node.js CI", "Pruebas de Mutaciones con Stryker"]
-    types:
-      - completed
   push:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  collect-and-deploy:
-    name: Recopilar Análisis y Desplegar Dashboard
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-      actions: read
-    
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Setup Node.js
+
+      - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
-      - name: Install dependencies
+
+      - name: 📦 Install dependencies
         run: npm ci
-      
-      # ========== EJECUTAR SOLO SEMGREP (RÁPIDO) ==========
-      - name: Run Semgrep Security Analysis
-        id: semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: auto
-          generateSarif: "1"
-        continue-on-error: true
-      
-      # ========== DESCARGAR ARTEFACTOS DE OTROS WORKFLOWS ==========
-      - name: Download SonarQube artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: docugen-ai-build
-          path: ./sonar-artifacts
-        continue-on-error: true
-      
-      - name: Download Stryker artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: stryker-reports
-          path: ./stryker-artifacts
-        continue-on-error: true
-      
-      # ========== CREAR ESTRUCTURA DEL DASHBOARD ==========
-      - name: Create Dashboard Structure
+
+      - name: 🏗️ Build application
         run: |
-          mkdir -p ./dashboard/{semgrep,snyk,sonar,stryker,assets}
+          # Crear estructura de docs si no existe
+          mkdir -p docs/reports/{semgrep,snyk,sonar,bdd,mutation}
           
-          # CSS optimizado y compacto
-          cat > ./dashboard/assets/style.css << 'EOF'
-          :root{--primary:#4f46e5;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--info:#3b82f6}
+      - name: 📄 Generate main dashboard
+        run: |
+          cat > docs/index.md << 'EOF'
+          # 📊 DocAI - Dashboard de Reportes de Calidad
+
+          Bienvenido al dashboard centralizado de reportes de calidad para **DocAI**.
+
+          ## 🎯 Reportes Disponibles
+
+          ### 🛡️ Análisis de Seguridad
+          - [🔎 Semgrep - Análisis Estático](reports/semgrep/semgrep-summary.html)
+          - [🛡️ Snyk - Vulnerabilidades](reports/snyk/snyk-summary.html)
+
+          ### 📊 Calidad de Código
+          - [🎯 SonarCloud - Calidad](reports/sonar/sonar-summary.html)
+
+          ### 🧪 Testing
+          - [🧪 BDD & Coverage](reports/bdd/bdd-summary.html)
+          - [🧬 Mutation Testing](reports/mutation/mutation-summary.html)
+
+          ## 🔗 Enlaces Útiles
+          - [Repositorio GitHub](https://github.com/Aakhtar004/doc_ai)
+          - [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=doc-ai-sc_doc-ai-py)
+
+          ---
+          *Dashboard actualizado automáticamente por GitHub Actions*
+          EOF
+
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs
+          force_orphan: true
           .dashboard-header{background:linear-gradient(135deg,var(--primary),var(--success));min-height:50vh;display:flex;align-items:center}
           .analysis-card{transition:all 0.3s ease;border:none;border-radius:20px;height:100%;box-shadow:0 4px 6px rgba(0,0,0,0.1)}
           .analysis-card:hover{transform:translateY(-8px);box-shadow:0 20px 25px rgba(0,0,0,0.1)}

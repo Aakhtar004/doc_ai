@@ -1,85 +1,94 @@
 # .github/workflows/semgrep.yml
-name: Semgrep Security Analysis
+name: 🔎 Semgrep Security Analysis
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, develop ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  semgrep-scan:
-    name: Scan & Publish Semgrep Report
+  setup:
+    uses: ./.github/workflows/base-setup.yml
+    with:
+      reports-dir: 'reports/semgrep'
+
+  semgrep-analysis:
+    needs: setup
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
 
-      - name: Install Semgrep + pandas
-        run: pip install semgrep pandas
+      - name: 📁 Setup semgrep reports
+        run: mkdir -p reports/semgrep
 
-      - name: Run Semgrep (JSON output)
+      - name: 🔎 Run Semgrep analysis
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+          generateSarif: "1"
+        continue-on-error: true
+
+      - name: 📄 Process Semgrep results
         run: |
-          mkdir -p reports
-          semgrep --config p/default \
-                  --json --output reports/semgrep.json \
-                  --include server.cjs \
-                  --include api.mjs \
-                  --include config/supabase.js \
-                  --include routes/ \
-                  --include services/ \
-                  --include public/js/ \
-                  --metrics off
+          if [ -f semgrep.sarif ]; then
+            mv semgrep.sarif reports/semgrep/semgrep-results.sarif
+          fi
+          if [ -f semgrep.json ]; then
+            mv semgrep.json reports/semgrep/semgrep-results.json
+          fi
 
-      - name: Generate HTML report
+      - name: 📊 Generate Semgrep summary
         run: |
-          python - <<'PYCODE'
-          import json, pandas as pd
+          cat > reports/semgrep/semgrep-summary.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Semgrep Security Analysis - DocAI</title>
+              <meta charset="UTF-8">
+              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+          </head>
+          <body>
+              <div class="container mt-4">
+                  <h1>🔎 Semgrep Security Analysis</h1>
+                  <p>Análisis estático de seguridad completado</p>
+                  <div class="alert alert-info">
+                      <h4>Reportes disponibles:</h4>
+                      <ul>
+                          <li><a href="semgrep-results.json">Resultados JSON</a></li>
+                          <li><a href="semgrep-results.sarif">Formato SARIF</a></li>
+                      </ul>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
 
-          data = json.load(open('reports/semgrep.json'))
-          rows = []
-          for r in data.get('results', []):
-              rows.append({
-                  'Check ID': r['check_id'],
-                  'Path':     r['path'],
-                  'Start':    r['start']['line'],
-                  'End':      r['end']['line'],
-                  'Message':  r['extra']['message'],
-                  'Severity': r['extra']['severity']
-              })
-          df = pd.DataFrame(rows)
-          html = f"""
-          <!doctype html><html><head>
-            <meta charset='utf-8'><title>Semgrep Report</title>
-            <style>
-              body {{ font-family: Arial; }}
-              table {{ border-collapse: collapse; width: 100%; }}
-              th, td {{ border: 1px solid #ccc; padding: 6px; }}
-              th {{ background: #eee; }}
-            </style>
-          </head><body>
-            <h1>Semgrep Security Report</h1>
-            <p>Total findings: {len(df)}</p>
-            {df.to_html(index=False)}
-          </body></html>
-          """
-          open('reports/semgrep-report.html','w').write(html)
-          PYCODE
+      - name: 📤 Upload Semgrep Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-reports
+          path: reports/semgrep/
+          retention-days: 30
 
-      - name: Deploy report to GH‑Pages
-        if: github.ref == 'refs/heads/main'
+      - name: 📂 Copy to docs
+        run: |
+          mkdir -p docs/reports/semgrep
+          cp -r reports/semgrep/* docs/reports/semgrep/
+
+      - name: 🚀 Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./reports
-          publish_branch: gh-pages
-          destination_dir: semgrep
-          keep_files: false
+          publish_dir: docs
+          keep_files: true

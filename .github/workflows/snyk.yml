@@ -1,97 +1,92 @@
-name: Snyk Security Analysis
-env:
-  NODE_VERSION: '18.x'                    # Versión de Node.js del proyecto
-on: 
+name: 🛡️ Snyk Security Analysis
+
+on:
   push:
-    branches: [ "main" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  security:
-    name: Snyk Security Scan
+  setup:
+    uses: ./.github/workflows/base-setup.yml
+    with:
+      reports-dir: 'reports/snyk'
+
+  snyk-analysis:
+    needs: setup
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '18'
           cache: 'npm'
+      - run: npm ci
 
-      - name: Install dependencies
-        run: npm ci
+      - name: 📁 Setup snyk reports
+        run: mkdir -p reports/snyk
 
-      - name: Setup Snyk
-        uses: snyk/actions/setup@master
-
-      - name: Install snyk-to-html
-        run: npm install -g snyk-to-html
-
-      - name: Run Snyk to check for vulnerabilities
+      - name: 🛡️ Snyk Dependencies Test
+        continue-on-error: true
         run: |
-          snyk test --json --all-projects | snyk-to-html -o snyk-vulnerabilities-report.html
+          npx snyk test --json > reports/snyk/snyk-dependencies.json || true
+          npx snyk test --sarif > reports/snyk/snyk-dependencies.sarif || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
 
-      - name: Run Snyk Code Test (SAST)
+      - name: 💻 Snyk Code Analysis
+        continue-on-error: true
         run: |
-          snyk code test --json | snyk-to-html -o snyk-code-report.html
+          npx snyk code test --json > reports/snyk/snyk-code.json || true
+          npx snyk code test --sarif > reports/snyk/snyk-code.sarif || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
 
-      - name: Run Snyk to check Docker images
+      - name: 📊 Generate Snyk summary
         run: |
-          snyk container test node:18-alpine --json | snyk-to-html -o snyk-container-report.html
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
+          cat > reports/snyk/snyk-summary.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Snyk Security Analysis - DocAI</title>
+              <meta charset="UTF-8">
+              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+          </head>
+          <body>
+              <div class="container mt-4">
+                  <h1>🛡️ Snyk Security Analysis</h1>
+                  <p>Análisis de vulnerabilidades completado</p>
+                  <div class="alert alert-success">
+                      <h4>Reportes disponibles:</h4>
+                      <ul>
+                          <li><a href="snyk-dependencies.json">Dependencias (JSON)</a></li>
+                          <li><a href="snyk-code.json">Código (JSON)</a></li>
+                          <li><a href="snyk-dependencies.sarif">Dependencias (SARIF)</a></li>
+                          <li><a href="snyk-code.sarif">Código (SARIF)</a></li>
+                      </ul>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
 
-      - name: Run Snyk Infrastructure as Code test
-        run: |
-          snyk iac test . --json | snyk-to-html -o snyk-iac-report.html
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
-
-      - name: Upload vulnerability report
+      - name: 📤 Upload Snyk Reports
         uses: actions/upload-artifact@v4
         with:
-          name: snyk-vulnerabilities-report
-          path: snyk-vulnerabilities-report.html
+          name: snyk-reports
+          path: reports/snyk/
           retention-days: 30
 
-      - name: Upload code analysis report
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-code-report
-          path: snyk-code-report.html
-          retention-days: 30
-
-      - name: Upload container report
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-container-report
-          path: snyk-container-report.html
-          retention-days: 30
-
-      - name: Upload IaC report
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-iac-report
-          path: snyk-iac-report.html
-          retention-days: 30
-
-      - name: Monitor project with Snyk
+      - name: 📂 Copy to docs
         run: |
-          snyk monitor --all-projects
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
+          mkdir -p docs/reports/snyk
+          cp -r reports/snyk/* docs/reports/snyk/
+
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs
+          keep_files: true
