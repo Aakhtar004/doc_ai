@@ -17,21 +17,23 @@ jobs:
       
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: npm ci
+          
+      - name: 📦 Install dependencies
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: 📁 Setup semgrep reports
         run: mkdir -p reports/semgrep docs/reports/semgrep
 
       - name: 🔎 Run Semgrep analysis
         run: |
-          # Instalar semgrep
           python3 -m pip install semgrep
-          
-          # Ejecutar semgrep con reglas de seguridad
           semgrep --config=auto --json --output=reports/semgrep/semgrep-results.json . || true
           semgrep --config=auto --sarif --output=reports/semgrep/semgrep-results.sarif . || true
         continue-on-error: true
@@ -49,7 +51,7 @@ jobs:
           <body>
               <div class="container mt-4">
                   <h1>🔎 Semgrep Security Analysis</h1>
-                  <p>Análisis estático de seguridad completado el $(date)</p>
+                  <p>Análisis estático de seguridad completado</p>
                   <div class="alert alert-info">
                       <h4>Reportes disponibles:</h4>
                       <ul>
@@ -71,20 +73,6 @@ jobs:
 
       - name: 📂 Copy to docs
         run: cp -r reports/semgrep/* docs/reports/semgrep/
-
-      - name: 🚀 Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs
-          keep_files: true
-          path: reports/semgrep/
-          retention-days: 30
-
-      - name: 📂 Copy to docs
-        run: |
-          mkdir -p docs/reports/semgrep
-          cp -r reports/semgrep/* docs/reports/semgrep/
 
       - name: 🚀 Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

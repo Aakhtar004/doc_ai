@@ -30,11 +30,12 @@ jobs:
           cache: 'npm'
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: 🏗️ Build application
         run: |
-          # Crear estructura de docs si no existe
           mkdir -p docs/reports/{semgrep,snyk,sonar,bdd,mutation}
           
       - name: 📄 Generate main dashboard
@@ -43,8 +44,6 @@ jobs:
           # 📊 DocAI - Dashboard de Reportes de Calidad
 
           Bienvenido al dashboard centralizado de reportes de calidad para **DocAI**.
-
-          *Última actualización: $(date)*
 
           ## 🎯 Reportes Disponibles
 
@@ -72,6 +71,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs
+          force_orphan: true
           force_orphan: true
           .analysis-card:hover{transform:translateY(-8px);box-shadow:0 20px 25px rgba(0,0,0,0.1)}
           .card-semgrep{border-top:6px solid var(--danger)}.card-snyk{border-top:6px solid var(--info)}

@@ -13,11 +13,16 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: npm ci
+          
+      - name: 📦 Install dependencies
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: 📁 Setup snyk reports
         run: mkdir -p reports/snyk docs/reports/snyk
@@ -25,10 +30,7 @@ jobs:
       - name: 🛡️ Snyk Dependencies Test
         continue-on-error: true
         run: |
-          # Instalar Snyk si no está disponible
           npm install -g snyk || true
-          
-          # Ejecutar análisis de dependencias
           snyk test --json > reports/snyk/snyk-dependencies.json || echo '{"vulnerabilities":[], "summary":"No vulnerabilities found"}' > reports/snyk/snyk-dependencies.json
           snyk test --sarif > reports/snyk/snyk-dependencies.sarif || echo '{"runs":[{"results":[]}]}' > reports/snyk/snyk-dependencies.sarif
         env:
@@ -55,7 +57,7 @@ jobs:
           <body>
               <div class="container mt-4">
                   <h1>🛡️ Snyk Security Analysis</h1>
-                  <p>Análisis de vulnerabilidades completado el $(date)</p>
+                  <p>Análisis de vulnerabilidades completado</p>
                   <div class="alert alert-success">
                       <h4>Reportes disponibles:</h4>
                       <ul>

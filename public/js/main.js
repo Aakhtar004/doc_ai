@@ -1,13 +1,14 @@
 // Variables globales
-const uploadZone = document.getElementById('uploadZone');
+let uploadedFile = null;
+
+// Elementos del DOM
 const fileInput = document.getElementById('fileInput');
-const uploadedFiles = document.getElementById('uploadedFiles');
+const uploadZone = document.getElementById('uploadZone');
 const filesList = document.getElementById('filesList');
+const uploadedFiles = document.getElementById('uploadedFiles');
 const generateBtn = document.getElementById('generateBtn');
 const loadingSpinner = document.getElementById('loadingSpinner');
 const resultados = document.getElementById('resultados');
-
-let uploadedFile = null;
 
 // Eventos de drag and drop
 uploadZone.addEventListener('dragover', (e) => {
@@ -34,43 +35,25 @@ fileInput.addEventListener('change', (e) => {
     }
 });
 
+// Manejo de archivos
 function handleFile(file) {
-    // Verificar que sea un archivo de código
-    const extension = file.name.split('.').pop().toLowerCase();
-    const extensionesSoportadas = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go', 'rs', 'html', 'css', 'scss', 'vue', 'kt', 'swift', 'dart', 'sql'];
-    
-    if (!extensionesSoportadas.includes(extension)) {
-        alert('Tipo de archivo no soportado. Por favor sube un archivo de código válido.');
-        return;
-    }
-    
-    // Leer el contenido del archivo
     const reader = new FileReader();
     reader.onload = function(e) {
         uploadedFile = {
             name: file.name,
             content: e.target.result,
-            extension: extension
+            extension: file.name.split('.').pop().toLowerCase()
         };
         
-        // Mostrar información del archivo
+        // Mostrar archivo subido
         filesList.innerHTML = `
-            <div class="file-info">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-file-code me-2 text-primary"></i>
-                        <strong>${file.name}</strong>
-                        <small class="text-muted ms-2">(${(file.size / 1024).toFixed(1)} KB)</small>
-                        <span class="badge bg-success ms-2">${extension.toUpperCase()}</span>
-                    </div>
-                    <i class="fas fa-check-circle text-success"></i>
-                </div>
+            <div class="file-item">
+                <span>${file.name}</span>
+                <small>(${(file.size / 1024).toFixed(2)} KB)</small>
             </div>
         `;
-        
         uploadedFiles.style.display = 'block';
     };
-    
     reader.readAsText(file);
 }
 

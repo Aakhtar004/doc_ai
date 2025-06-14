@@ -3,6 +3,7 @@
 
 # Dependencias
 node_modules/
+package-lock.json
 
 # Archivos de sistema
 .DS_Store
@@ -18,3 +19,7 @@ yarn-error.log*
 /dist
 /build
 .vercel
+
+# Reportes y cobertura
+/coverage
+/reports

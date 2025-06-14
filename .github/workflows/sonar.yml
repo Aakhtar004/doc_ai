@@ -15,11 +15,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: npm ci
+          
+      - name: 📦 Install dependencies
+        run: |
+          rm -f package-lock.json
+          npm install
 
       - name: 📁 Setup sonar reports
         run: mkdir -p reports/sonar docs/reports/sonar
@@ -47,17 +52,13 @@ jobs:
           <body>
               <div class="container mt-4">
                   <h1>🎯 SonarCloud Quality Analysis</h1>
-                  <p>Análisis de calidad de código completado el $(date)</p>
+                  <p>Análisis de calidad de código completado</p>
                   <div class="alert alert-primary">
                       <h4>Dashboard SonarCloud:</h4>
                       <a href="https://sonarcloud.io/project/overview?id=doc-ai-project" 
                          class="btn btn-primary" target="_blank">
                           Ver en SonarCloud
                       </a>
-                  </div>
-                  <div class="mt-3">
-                      <p><strong>Project Key:</strong> doc-ai-project</p>
-                      <p><strong>Organization:</strong> doc-ai-org</p>
                   </div>
               </div>
           </body>
