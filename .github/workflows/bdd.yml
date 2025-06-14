@@ -14,15 +14,18 @@ jobs:
       test-report-path: ${{ steps.prepare.outputs.report-path }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
+
       - name: Install dependencies
         run: |
           rm -f package-lock.json
           npm install
+
       - name: Prepare test structure
         id: prepare
         run: |
@@ -34,10 +37,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
+
       - name: Install dependencies
         run: |
           rm -f package-lock.json
@@ -63,10 +68,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
+
       - name: Install dependencies
         run: |
           rm -f package-lock.json
@@ -89,10 +96,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
+
       - name: Install dependencies
         run: |
           rm -f package-lock.json
@@ -118,6 +127,7 @@ jobs:
       contents: write
       pages: write
       id-token: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -129,161 +139,81 @@ jobs:
       - name: Consolidate BDD reports
         run: |
           mkdir -p docs/reports/bdd
-          find artifacts -type f \( -name "*.json" -o -name "*.html" -o -name "*.log" \) -exec cp {} docs/reports/bdd/ \; 2>/dev/null || true
+          find artifacts -type f \( -name "*.json" -o -name "*.html" -o -name "*.log" \) \
+            -exec cp {} docs/reports/bdd/ \; 2>/dev/null || true
+
+      - name: Generate BDD index.html
+        run: |
           cat > docs/reports/bdd/index.html <<EOF
           <!DOCTYPE html>
           <html>
           <head>
-              <title>BDD Test Results - DocAI</title>
-              <meta charset="UTF-8">
-              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <title>BDD Test Results - DocAI</title>
+            <meta charset="UTF-8">
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
           </head>
           <body>
-              <div class="container mt-4">
-                  <h1>🧪 BDD Test Results</h1>
-                  <p class="lead">Behavior-Driven Development test suite for DocAI</p>
-                  <div class="row">
-                      <div class="col-md-4">
-                          <div class="card">
-                              <div class="card-body">
-                                  <h5 class="card-title">🧪 Unit Tests</h5>
-                                  <p class="card-text">Core functionality validation</p>
-                                  <a href="lcov-report/index.html" class="btn btn-primary">View Coverage</a>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="col-md-4">
-                          <div class="card">
-                              <div class="card-body">
-                                  <h5 class="card-title">🔗 Integration Tests</h5>
-                                  <p class="card-text">API and service integration</p>
-                                  <a href="test.log" class="btn btn-success">View Log</a>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="col-md-4">
-                          <div class="card">
-                              <div class="card-body">
-                                  <h5 class="card-title">🎨 UI Tests</h5>
-                                  <p class="card-text">User interface validation</p>
-                                  <a href="test.log" class="btn btn-info">View Log</a>
-                              </div>
-                          </div>
-                      </div>
+            <div class="container mt-4">
+              <h1>🧪 BDD Test Results</h1>
+              <p class="lead">Behavior-Driven Development test suite for DocAI</p>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title">🧪 Unit Tests</h5>
+                      <p class="card-text">Core functionality validation</p>
+                      <a href="unit/results.json" class="btn btn-primary">View Results</a>
+                    </div>
                   </div>
-                  <div class="mt-4">
-                      <h3>📊 Test Summary</h3>
-                      <ul class="list-group">
-                          <li class="list-group-item d-flex justify-content-between">
-                              <span>Unit Test Scenarios</span>
-                              <span class="badge bg-success">2 passed</span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <span>Integration Test Scenarios</span>
-                              <span class="badge bg-success">2 passed</span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <span>UI Test Scenarios</span>
-                              <span class="badge bg-success">2 passed</span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <strong>Total Scenarios</strong>
-                              <span class="badge bg-primary">6 passed</span>
-                          </li>
-                      </ul>
+                </div>
+                <div class="col-md-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title">🔗 Integration Tests</h5>
+                      <p class="card-text">API and service integration</p>
+                      <a href="integration/test.log" class="btn btn-success">View Log</a>
+                    </div>
                   </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title">🎨 UI Tests</h5>
+                      <p class="card-text">User interface validation</p>
+                      <a href="ui/test.log" class="btn btn-info">View Log</a>
+                    </div>
+                  </div>
+                </div>
               </div>
+              <div class="mt-4">
+                <h3>📊 Test Summary</h3>
+                <ul class="list-group">
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>Unit Test Scenarios</span>
+                    <span class="badge bg-success">2 passed</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>Integration Test Scenarios</span>
+                    <span class="badge bg-success">2 passed</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>UI Test Scenarios</span>
+                    <span class="badge bg-success">2 passed</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <strong>Total Scenarios</strong>
+                    <span class="badge bg-primary">6 passed</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </body>
           </html>
           EOF
 
-      - name: Commit & Push to gh-pages
+      - name: 🚀 Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          keep_files: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          keep_files: true
-          </html>
-          EOF
-          
-      - name: 🚀 Commit & Push to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          keep_files: true
-                              </div>
-                          </div>
-                      </div>
-                      <div class="col-md-4">
-                          <div class="card">
-                              <div class="card-body">
-                                  <h5 class="card-title">🔗 Integration Tests</h5>
-                                  <p class="card-text">API and service integration</p>
-                                  <a href="test.log" class="btn btn-success">View Log</a>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="col-md-4">
-                          <div class="card">
-                              <div class="card-body">
-                                  <h5 class="card-title">🎨 UI Tests</h5>
-                                  <p class="card-text">User interface validation</p>
-                                  <a href="test.log" class="btn btn-info">View Log</a>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div class="mt-4">
-                      <h3>📊 Test Summary</h3>
-                      <ul class="list-group">
-                          <li class="list-group-item d-flex justify-content-between">
-                              <span>Unit Test Scenarios</span>
-                              <span class="badge bg-success">2 passed</span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <span>Integration Test Scenarios</span>
-                              <span class="badge bg-success">2 passed</span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <span>UI Test Scenarios</span>
-                              <span class="badge bg-success">2 passed</span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <strong>Total Scenarios</strong>
-                              <span class="badge bg-primary">6 passed</span>
-                          </li>
-                      </ul>
-                  </div>
-              </div>
-          </body>
-          </html>
-          EOF
-          
-      - name: 🚀 Commit & Push to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          keep_files: true
-          
-          ## 🎯 Reportes Disponibles
-          
-          EOF
-          fi
-          
-          # Verificar si la entrada BDD ya existe y actualizarla
-          if ! grep -q "BDD Tests" docs/index.md; then
-            echo "- [🧪 BDD Tests](reports/bdd/index.html)" >> docs/index.md
-          fi
-          
-      - name: 🚀 Commit & Push to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          publish_dir: docs
           keep_files: true

@@ -1,3 +1,4 @@
+# .github/workflows/mutation-testing.yml
 name: 🧬 Stryker Mutation Testing
 
 on:
@@ -8,22 +9,25 @@ on:
 jobs:
   mutation-testing:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
+
       - name: 📦 Install dependencies
         run: |
           rm -f package-lock.json
           npm install
 
       - name: 📁 Setup mutation reports
-        run: mkdir -p reports/mutation docs/reports/mutation
+        run: |
+          mkdir -p reports/mutation docs/reports/mutation
 
       - name: 🧬 Install and run Stryker
         run: |
@@ -36,72 +40,30 @@ jobs:
           <!DOCTYPE html>
           <html>
           <head>
-              <title>Mutation Testing - DocAI</title>
-              <meta charset="UTF-8">
-              <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <title>Mutation Testing - DocAI</title>
+            <meta charset="UTF-8">
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
           </head>
           <body>
-              <div class="container mt-4">
-                  <h1>🧬 Mutation Testing Results</h1>
-                  <p>Análisis de calidad de tests mediante mutación</p>
-                  
-                  <div class="alert alert-info">
-                      <h4>¿Qué es Mutation Testing?</h4>
-                      <p>Las pruebas de mutación evalúan la calidad de tus tests introduciendo pequeños cambios en el código y verificando si los tests los detectan.</p>
-                  </div>
-                  
-                  <div class="mt-4">
-                      <h4>Estado:</h4>
-                      <p>Configuración simplificada - Ejecutar manualmente cuando sea necesario.</p>
-                  </div>
+            <div class="container mt-4">
+              <h1>🧬 Mutation Testing Results</h1>
+              <p>Análisis de calidad de tests mediante mutación</p>
+              <div class="alert alert-info">
+                <h4>¿Qué es Mutation Testing?</h4>
+                <p>Las pruebas de mutación evalúan la calidad de tus tests introduciendo pequeños cambios en el código y verificando si los tests los detectan.</p>
               </div>
+              <div class="mt-4">
+                <h4>Estado:</h4>
+                <p>Configuración simplificada - Ejecutar manualmente cuando sea necesario.</p>
+              </div>
+            </div>
           </body>
           </html>
           EOF
-
-      - name: 📂 Copy to docs
-        run: cp -r reports/mutation/* docs/reports/mutation/
-
-      - name: 🚀 Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs
-          keep_files: true
-          name: mutation-reports
-          path: reports/mutation/
-          retention-days: 30
 
       - name: 📂 Copy to docs
         run: |
-          mkdir -p docs/reports/mutation
           cp -r reports/mutation/* docs/reports/mutation/
-
-      - name: 🚀 Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs
-          keep_files: true
-                  </ul>
-              </div>
-              
-              <div style="margin-top: 30px;">
-                  <h2>📊 What is Mutation Testing?</h2>
-                  <p>Mutation testing evaluates the quality of your test suite by introducing small changes (mutations) to your code and checking if your tests detect them.</p>
-                  <ul>
-                      <li><strong>Killed Mutants:</strong> Tests detected the change ✅</li>
-                      <li><strong>Survived Mutants:</strong> Tests missed the change ❌</li>
-                      <li><strong>Score:</strong> Percentage of killed mutants</li>
-                  </ul>
-              </div>
-          </body>
-          </html>
-          EOF
-          else
-            echo "MUTATION_SCORE=0" >> $GITHUB_ENV
-            echo "⚠️ No mutation report generated"
-          fi
 
       - name: 📤 Upload Mutation Reports
         uses: actions/upload-artifact@v4
@@ -110,9 +72,12 @@ jobs:
           path: reports/mutation/
           retention-days: 30
 
-      - name: 📂 Copy to docs for GitHub Pages
-        run: |
-          cp -r reports/mutation/* docs/reports/mutation/ 2>/dev/null || true
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs
+          keep_files: true
 
       - name: 💬 Comment on PR with mutation results
         if: github.event_name == 'pull_request'
@@ -121,30 +86,19 @@ jobs:
           script: |
             const fs = require('fs');
             const mutationScore = process.env.MUTATION_SCORE || 0;
-            
-            let status = '❌';
-            let color = 'red';
-            if (mutationScore > 80) {
-              status = '🎯';
-              color = 'green';
-            } else if (mutationScore > 60) {
-              status = '⚠️';
-              color = 'yellow';
-            }
-            
+            let status = '❌', color = 'red';
+            if (mutationScore > 80) { status = '🎯'; color = 'green'; }
+            else if (mutationScore > 60) { status = '⚠️'; color = 'yellow'; }
             const comment = `## 🧬 Mutation Testing Results
-            
+
             **Mutation Score:** ${status} ${mutationScore}% (Target: >60%)
-            
-            ${mutationScore > 60 ? '✅ Great job! Your tests are catching mutations effectively.' : '⚠️ Consider improving your test suite to catch more potential bugs.'}
-            
+
+            ${mutationScore > 60
+              ? '✅ Great job! Your tests are catching mutations effectively.'
+              : '⚠️ Consider improving your test suite to catch more potential bugs.'}
+
             📊 [View detailed mutation report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
-            ### What this means:
-            - **${mutationScore}% of code mutations** were detected by your tests
-            - Higher scores indicate more thorough test coverage
-            - Mutation testing helps find gaps in your test suite`;
-            
+            `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
