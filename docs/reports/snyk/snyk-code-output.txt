@@ -1,6 +1,34 @@
 
 Testing /home/runner/work/doc_ai/doc_ai ...
 
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/auth.routes.test.js, line 18 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user's behalf.
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/proyectos.routes.test.js, line 12 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user's behalf.
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/proyectos.routes.test.js, line 80 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user's behalf.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/auth.routes.test.js, line 18 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 12 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 80 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 96 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
  ✗ [Low] Improper Type Validation 
    Path: routes/auth.js, line 22 
    Info: The type of this object, coming from body and the value of its length property can be controlled by the user. An attacker may craft the properties of the object to crash the application or bypass its logic. Consider checking the type of the object.
@@ -8,6 +36,42 @@ Testing /home/runner/work/doc_ai/doc_ai ...
  ✗ [Low] Improper Type Validation 
    Path: routes/proyectos.js, line 27 
    Info: The type of this object, coming from body and the value of its length property can be controlled by the user. An attacker may craft the properties of the object to crash the application or bypass its logic. Consider checking the type of the object.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 35 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 48 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 62 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 76 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 35 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 48 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 62 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 76 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/services/db.service.test.js, line 30 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in password.
 
  ✗ [Medium] Cross-site Scripting (XSS) 
    Path: public/js/auth.js, line 112 
@@ -46,7 +110,7 @@ Project path:      /home/runner/work/doc_ai/doc_ai
 
 Summary:
 
-  9 Code issues found
-  7 [Medium]   2 [Low] 
+  25 Code issues found
+  7 [Medium]   18 [Low] 
 
 
