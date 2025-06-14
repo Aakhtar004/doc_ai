@@ -1,35 +1,33 @@
 # .github/workflows/mutation-testing.yml
-name: 🧬 Mutation Testing
+name: Mutation Testing
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * 1'
-  workflow_call: {}
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
 
 jobs:
   analysis:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      summary-path: ${{ steps.summary.outputs.summary-path }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with: { node-version: '18', cache: 'npm' }
       - run: npm install --save-dev @stryker-mutator/core @stryker-mutator/jest-runner || true
 
-      - name: Run Stryker
+      - name: Run Mutation Testing
         run: npx stryker run || true
 
-      - name: Generate Mutation summary
-        id: summary
+      - name: Copy Mutation report
         run: |
-          mkdir -p reports/mutation
-          cat > reports/mutation/mutation-summary.html <<EOF
-          <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mutation</title></head>
-          <body><h1>🧬 Mutation Results</h1></body></html>
-          EOF
-          echo "summary-path=reports/mutation/mutation-summary.html" >> $GITHUB_OUTPUT
+          mkdir -p docs/reports/mutation
+          cp -R reports/mutation/* docs/reports/mutation/ || true
+
+      - name: Commit Mutation report
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: main
+          commit_message: "ci: update Mutation report"
+          file_pattern: docs/reports/mutation/**

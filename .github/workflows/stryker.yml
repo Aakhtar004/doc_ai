@@ -1,4 +1,4 @@
-name: 🧬 Stryker Report
+name: Stryker Report
 
 on:
   workflow_dispatch:

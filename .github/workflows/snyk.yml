@@ -1,45 +1,47 @@
-name: 🛡️ Snyk Security Analysis
+name: Snyk Security Analysis
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_call: {}
+
+permissions:
+  contents: write
 
 jobs:
   analysis:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      deps-json: ${{ steps.run.outputs.deps-json }}
-      code-json: ${{ steps.run.outputs.code-json }}
-      summary-path: ${{ steps.summary.outputs.summary-path }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install deps & Snyk
+        run: |
+          npm install
+          npm install -g snyk
+
       - name: Run Snyk tests
-        id: run
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
-          npm install -g snyk
-          mkdir -p reports/snyk
-          snyk test --json > reports/snyk/snyk-deps.json || echo '{}' > reports/snyk/snyk-deps.json
-          snyk code test --json > reports/snyk/snyk-code.json || echo '{}' > reports/snyk/snyk-code.json
-          echo "deps-json=reports/snyk/snyk-deps.json" >> $GITHUB_OUTPUT
-          echo "code-json=reports/snyk/snyk-code.json" >> $GITHUB_OUTPUT
+          mkdir -p docs/reports/snyk
+          snyk test --json > docs/reports/snyk/snyk-deps.json || echo '{}' > docs/reports/snyk/snyk-deps.json
+          snyk code test --json > docs/reports/snyk/snyk-code.json || echo '{}' > docs/reports/snyk/snyk-code.json
 
       - name: Generate Snyk summary
-        id: summary
         run: |
-          cat > reports/snyk/snyk-summary.html <<EOF
+          cat > docs/reports/snyk/snyk-summary.html <<EOF
           <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Snyk</title></head>
-          <body><h1>🛡️ Snyk Analysis</h1>
+          <body><h1>🛡️ Snyk Security</h1>
           <ul>
             <li><a href="snyk-deps.json">Dependencias</a></li>
             <li><a href="snyk-code.json">Código</a></li>
           </ul></body></html>
           EOF
-          echo "summary-path=reports/snyk/snyk-summary.html" >> $GITHUB_OUTPUT
+
+      - name: Commit Snyk report
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: main
+          commit_message: "ci: update Snyk report"
+          file_pattern: docs/reports/snyk/**

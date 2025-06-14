@@ -1,5 +1,5 @@
 # .github/workflows/semgrep.yml
-name: 🔎 Semgrep Security Analysis
+name: Semgrep Security Analysis
 
 on:
   push:

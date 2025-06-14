@@ -1,9 +1,15 @@
 # .github/workflows/deploy.yml
-name: 🚀 Deploy to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["🔎 Semgrep Security Analysis"] # Asegúrate que este es el nombre exacto de tu workflow semgrep.yml
+    workflows: # Solo una vez la clave "workflows"
+      - "Semgrep Security Analysis" # Elemento de la lista
+      - "Snyk Security Analysis"    # Elemento de la lista
+      - "SonarCloud Analysis"       # Elemento de la lista
+      - "Stryker Report"            # Elemento de la lista
+      - "Mutation Testing"          # Elemento de la lista
+      - "BDD Tests"                 # Elemento de la lista
     types:
       - completed
     branches: [main]

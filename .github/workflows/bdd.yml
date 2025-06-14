@@ -1,237 +1,29 @@
-name: 🧪 BDD Tests
+name: BDD Tests
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-  workflow_call: {}
+
+permissions:
+  contents: write
 
 jobs:
   analysis:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-    outputs:
-      summary-path: ${{ steps.summary.outputs.summary-path }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '18', cache: 'npm' }
-      - run: npm install
 
       - name: Run BDD suite
         run: |
-          mkdir -p reports/bdd
-          npx cucumber-js --format html:reports/bdd/index.html || true
-
-      - name: Generate BDD summary
-        id: summary
-        run: |
-          echo "summary-path=reports/bdd/index.html" >> $GITHUB_OUTPUT
-
-  setup:
-    runs-on: ubuntu-latest
-    outputs:
-      test-report-path: ${{ steps.prepare.outputs.report-path }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
-
-      - name: Prepare test structure
-        id: prepare
-        run: |
-          mkdir -p reports/bdd/{unit,integration,ui}
-          echo "report-path=reports/bdd" >> $GITHUB_OUTPUT
-
-  unit:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
-
-      - name: Run unit BDD tests
-        run: |
-          mkdir -p reports/bdd/unit
-          npm run test:coverage || true
-          if [ -d coverage ]; then
-            cp -r coverage/* reports/bdd/unit/ || true
-          fi
-          echo '{"status": "passed", "scenarios": 2, "type": "unit"}' > reports/bdd/unit/results.json
-
-      - name: Upload Unit Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: bdd-unit-report
-          path: reports/bdd/unit/
-
-  integration:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
-
-      - name: Run integration BDD tests
-        run: |
-          mkdir -p reports/bdd/integration
-          echo "Integration tests completed" > reports/bdd/integration/test.log
-          echo '{"status": "passed", "scenarios": 2, "type": "integration"}' > reports/bdd/integration/results.json
-
-      - name: Upload Integration Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: bdd-integration-report
-          path: reports/bdd/integration/
-
-  ui:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
-
-      - name: Run UI BDD tests
-        run: |
-          mkdir -p reports/bdd/ui
-          echo "UI tests completed" > reports/bdd/ui/test.log
-          echo '{"status": "passed", "scenarios": 2, "type": "ui"}' > reports/bdd/ui/results.json
-
-      - name: Upload UI Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: bdd-ui-report
-          path: reports/bdd/ui/
-
-  publish:
-    needs: [unit, integration, ui]
-    runs-on: ubuntu-latest
-    if: always()
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all BDD reports
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Consolidate BDD reports
-        run: |
+          npm install --save-dev @cucumber/cucumber
           mkdir -p docs/reports/bdd
-          find artifacts -type f \( -name "*.json" -o -name "*.html" -o -name "*.log" \) \
-            -exec cp {} docs/reports/bdd/ \; 2>/dev/null || true
+          npx cucumber-js --format html:docs/reports/bdd/index.html || true
 
-      - name: Generate BDD index.html
-        run: |
-          cat > docs/reports/bdd/index.html <<EOF
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>BDD Test Results - DocAI</title>
-            <meta charset="UTF-8">
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-          </head>
-          <body>
-            <div class="container mt-4">
-              <h1>🧪 BDD Test Results</h1>
-              <p class="lead">Behavior-Driven Development test suite for DocAI</p>
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="card">
-                    <div class="card-body">
-                      <h5 class="card-title">🧪 Unit Tests</h5>
-                      <p class="card-text">Core functionality validation</p>
-                      <a href="unit/results.json" class="btn btn-primary">View Results</a>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card">
-                    <div class="card-body">
-                      <h5 class="card-title">🔗 Integration Tests</h5>
-                      <p class="card-text">API and service integration</p>
-                      <a href="integration/test.log" class="btn btn-success">View Log</a>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card">
-                    <div class="card-body">
-                      <h5 class="card-title">🎨 UI Tests</h5>
-                      <p class="card-text">User interface validation</p>
-                      <a href="ui/test.log" class="btn btn-info">View Log</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-4">
-                <h3>📊 Test Summary</h3>
-                <ul class="list-group">
-                  <li class="list-group-item d-flex justify-content-between">
-                    <span>Unit Test Scenarios</span>
-                    <span class="badge bg-success">2 passed</span>
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between">
-                    <span>Integration Test Scenarios</span>
-                    <span class="badge bg-success">2 passed</span>
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between">
-                    <span>UI Test Scenarios</span>
-                    <span class="badge bg-success">2 passed</span>
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between">
-                    <strong>Total Scenarios</strong>
-                    <span class="badge bg-primary">6 passed</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </body>
-          </html>
-          EOF
+      - name: Commit BDD report
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: main
+          commit_message: "ci: update BDD report"
+          file_pattern: docs/reports/bdd/**

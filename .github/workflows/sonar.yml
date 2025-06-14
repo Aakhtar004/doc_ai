@@ -1,19 +1,17 @@
-name: 🎯 SonarCloud Analysis
+name: SonarCloud Analysis
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_call: {}
+
+permissions:
+  contents: write
 
 jobs:
   analysis:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      summary-path: ${{ steps.summary.outputs.summary-path }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -34,13 +32,18 @@ jobs:
         continue-on-error: true
 
       - name: Generate Sonar summary
-        id: summary
         run: |
-          mkdir -p reports/sonar
-          cat > reports/sonar/sonar-summary.html <<EOF
+          mkdir -p docs/reports/sonar
+          cat > docs/reports/sonar/sonar-summary.html <<EOF
           <!DOCTYPE html><html><head><meta charset="UTF-8"><title>SonarCloud</title></head>
           <body><h1>🎯 SonarCloud</h1>
           <a href="https://sonarcloud.io/project/overview?id=doc-ai-project">Ver en SonarCloud</a>
           </body></html>
           EOF
-          echo "summary-path=reports/sonar/sonar-summary.html" >> $GITHUB_OUTPUT
+
+      - name: Commit Sonar report
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: main
+          commit_message: "ci: update Sonar report"
+          file_pattern: docs/reports/sonar/**
