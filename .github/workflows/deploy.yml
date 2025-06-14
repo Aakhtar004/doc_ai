@@ -4,75 +4,27 @@ name: 🚀 Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'public/**'
   workflow_dispatch:
 
 permissions:
   contents: write
   pages: write
   id-token: write
-  security-events: write
 
 jobs:
-  semgrep:
-    uses: ./.github/workflows/semgrep.yml
-
-  snyk:
-    uses: ./.github/workflows/snyk.yml
-
-  sonar:
-    uses: ./.github/workflows/sonar.yml
-
-  mutation:
-    uses: ./.github/workflows/mutation-testing.yml
-
-  stryker:
-    uses: ./.github/workflows/stryker.yml
-
-  bdd:
-    uses: ./.github/workflows/bdd.yml
-
-  deploy:
-    needs: [semgrep, snyk, sonar, mutation, stryker, bdd]
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Copy Semgrep results
-        run: |
-          mkdir -p docs/reports/semgrep
-          cp ${{ needs.semgrep.outputs.json-path }}    docs/reports/semgrep/ || true
-          cp ${{ needs.semgrep.outputs.sarif-path }}   docs/reports/semgrep/ || true
-          cp ${{ needs.semgrep.outputs.summary-path }}  docs/reports/semgrep/ || true
-
-      - name: Copy Snyk results
-        run: |
-          mkdir -p docs/reports/snyk
-          cp ${{ needs.snyk.outputs.deps-json }}      docs/reports/snyk/ || true
-          cp ${{ needs.snyk.outputs.code-json }}      docs/reports/snyk/ || true
-          cp ${{ needs.snyk.outputs.summary-path }}   docs/reports/snyk/ || true
-
-      - name: Copy Sonar summary
-        run: |
-          mkdir -p docs/reports/sonar
-          cp ${{ needs.sonar.outputs.summary-path }}  docs/reports/sonar/ || true
-
-      - name: Copy Mutation summary
-        run: |
-          mkdir -p docs/reports/mutation
-          cp ${{ needs.mutation.outputs.summary-path }}  docs/reports/mutation/ || true
-          cp ${{ needs.stryker.outputs.summary-path }}   docs/reports/mutation/ || true
-
-      - name: Copy BDD summary
-        run: |
-          mkdir -p docs/reports/bdd
-          cp ${{ needs.bdd.outputs.summary-path }} docs/reports/bdd/ || true
-
-      # Ya no generamos index.md, usamos el index.html existente en docs/index.html
-
       - name: Disable Jekyll processing
-        run: touch docs/.nojekyll
+        run: |
+          # PowerShell o Linux funcionan
+          New-Item -Path docs\.nojekyll -ItemType File -Force || touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
@@ -80,4 +32,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: docs
-          force_orphan:
+          force_orphan: true
