@@ -1,10 +1,12 @@
 name: SonarCloud Analysis
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["Snyk Security Analysis"] # Asegúrate que este sea el 'name:' exacto de tu workflow de Semgrep
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -37,7 +39,7 @@ jobs:
           cat > docs/reports/sonar/sonar-summary.html <<EOF
           <!DOCTYPE html><html><head><meta charset="UTF-8"><title>SonarCloud</title></head>
           <body><h1>🎯 SonarCloud</h1>
-          <a href="https://sonarcloud.io/project/overview?id=doc-ai-project">Ver en SonarCloud</a>
+          <a href="https://sonarcloud.io/project/overview?id=docaisc_docaipy">Ver en SonarCloud</a>
           </body></html>
           EOF
 
@@ -52,5 +54,4 @@ jobs:
         with:
           branch: main
           commit_message: "ci: update Sonar report"
-          file_pattern: docs/reports/sonar/**
-          push_options: --force
+          file_pattern: docs/reports/sonar/** 
