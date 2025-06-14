@@ -61,179 +61,116 @@ jobs:
           snyk test --all-projects --detection-depth=10 --json-file-output=docs/reports/snyk/snyk-dependencies.json || echo "{}" > docs/reports/snyk/snyk-dependencies.json
           snyk code test --json-file-output=docs/reports/snyk/snyk-code.json || echo "{}" > docs/reports/snyk/snyk-code.json
           
-      - name: Generate Snyk detailed HTML report from JSON using Python
+      - name: Generate Snyk detailed HTML report from TXT files
         run: |
-          # ... (tu script Python existente para generar el reporte HTML de Snyk) ...
           python - <<'PYCODE'
-          import json
-          import pandas as pd
           import os
-          from jinja2 import Environment, FileSystemLoader, select_autoescape
+          import html
 
-          # --- Configuración ---
-          deps_json_path = 'docs/reports/snyk/snyk-dependencies.json'
-          code_json_path = 'docs/reports/snyk/snyk-code.json'
+          # Leer los archivos de texto generados por Snyk
+          deps_txt_path = 'docs/reports/snyk/snyk-test-output.txt'
+          code_txt_path = 'docs/reports/snyk/snyk-code-output.txt'
           output_html_path = 'docs/reports/snyk/snyk-detailed-report.html'
-          
-          # --- Funciones de ayuda ---
-          def load_json_data(file_path, default_value):
+
+          def read_file_content(file_path):
               if not os.path.exists(file_path):
-                  print(f"Advertencia: El archivo {file_path} no fue encontrado. Usando valor por defecto.")
-                  return default_value
+                  return f"El archivo {file_path} no fue encontrado."
               try:
                   with open(file_path, 'r', encoding='utf-8') as f:
-                      content = f.read().strip()
-                      if not content:
-                          print(f"Advertencia: El archivo {file_path} está vacío. Usando valor por defecto.")
-                          return default_value
-                      return json.loads(content)
-              except json.JSONDecodeError as e:
-                  print(f"Error al decodificar JSON de {file_path}: {e}. Usando valor por defecto.")
-                  return default_value
+                      return f.read()
               except Exception as e:
-                  print(f"Error inesperado al leer {file_path}: {e}. Usando valor por defecto.")
-                  return default_value
+                  return f"Error al leer {file_path}: {e}"
 
-          def get_severity_class(severity_str):
-              s = severity_str.lower() if severity_str else 'low'
-              if s == 'critical': return 'table-dark' # Bootstrap class for dark
-              if s == 'high': return 'table-danger'
-              if s == 'medium': return 'table-warning'
-              return 'table-info' # low or info
+          # Leer contenido de los archivos TXT
+          deps_content = read_file_content(deps_txt_path)
+          code_content = read_file_content(code_txt_path)
 
-          # --- Cargar datos ---
-          deps_data = load_json_data(deps_json_path, {})
-          code_data = load_json_data(code_json_path, {})
+          # Escapar HTML para mostrar contenido tal como está
+          deps_html_content = html.escape(deps_content)
+          code_html_content = html.escape(code_content)
 
-          dep_vulnerabilities = []
-          if isinstance(deps_data, list): # Snyk test puede devolver una lista de proyectos
-              for project in deps_data:
-                  dep_vulnerabilities.extend(project.get('vulnerabilities', []))
-          elif isinstance(deps_data, dict):
-               dep_vulnerabilities = deps_data.get('vulnerabilities', [])
+          # Contar vulnerabilidades basándose en palabras clave en el texto
+          def count_vulnerabilities(content):
+              if "No vulnerabilities found" in content or "No issues found" in content:
+                  return 0
+              # Contar líneas que contienen información de vulnerabilidades
+              lines = content.split('\n')
+              vuln_count = 0
+              for line in lines:
+                  if any(keyword in line.lower() for keyword in ['vulnerability', 'issue', 'severity:', 'problem']):
+                      vuln_count += 1
+              return max(vuln_count, 1) if vuln_count > 0 else 0
 
+          dep_vuln_count = count_vulnerabilities(deps_content)
+          code_vuln_count = count_vulnerabilities(code_content)
 
-          code_vulnerabilities_raw = []
-          if isinstance(code_data, list): # Snyk Code puede devolver una lista directamente
-              code_vulnerabilities_raw = code_data
-          elif isinstance(code_data, dict) and 'runs' in code_data and code_data['runs']: # Formato SARIF-like
-              code_vulnerabilities_raw = code_data['runs'][0].get('results', [])
-          
-          processed_code_vulnerabilities = []
-          for vuln in code_vulnerabilities_raw:
-              message = vuln.get('message', {}).get('text', 'N/A')
-              rule_id = vuln.get('ruleId', 'N/A')
-              severity = vuln.get('level', vuln.get('severity', 'low')) # SARIF usa 'level'
-              path = 'N/A'
-              line = 'N/A'
-              if vuln.get('locations') and vuln['locations'][0].get('physicalLocation'):
-                  phys_loc = vuln['locations'][0]['physicalLocation']
-                  path = phys_loc.get('artifactLocation', {}).get('uri', 'N/A')
-                  line = phys_loc.get('region', {}).get('startLine', 'N/A')
-              processed_code_vulnerabilities.append({
-                  'ruleId': rule_id,
-                  'message': message,
-                  'path': path,
-                  'line': line,
-                  'severity': severity
-              })
-              
-          # --- Crear DataFrames de Pandas ---
-          if dep_vulnerabilities:
-              df_deps = pd.DataFrame(dep_vulnerabilities)
-              # Seleccionar y renombrar columnas para claridad
-              cols_deps = {
-                  'id': 'ID', 'title': 'Título', 'moduleName': 'Paquete', 
-                  'version': 'Versión Afectada', 'severity': 'Severidad',
-                  'packageName': 'Nombre Paquete', 'description': 'Descripción',
-                  'from': 'Ruta de Dependencia'
-              }
-              df_deps = df_deps[[col for col in cols_deps.keys() if col in df_deps.columns]]
-              df_deps = df_deps.rename(columns=cols_deps)
-              if 'Ruta de Dependencia' in df_deps.columns:
-                  df_deps['Ruta de Dependencia'] = df_deps['Ruta de Dependencia'].apply(lambda x: ' > '.join(x) if isinstance(x, list) else x)
-          else:
-              df_deps = pd.DataFrame(columns=['ID', 'Título', 'Paquete', 'Versión Afectada', 'Severidad', 'Descripción'])
-
-          if processed_code_vulnerabilities:
-              df_code = pd.DataFrame(processed_code_vulnerabilities)
-              cols_code = {
-                  'ruleId': 'ID Regla', 'message': 'Mensaje', 'path': 'Archivo',
-                  'line': 'Línea', 'severity': 'Severidad'
-              }
-              df_code = df_code.rename(columns=cols_code)
-          else:
-              df_code = pd.DataFrame(columns=['ID Regla', 'Mensaje', 'Archivo', 'Línea', 'Severidad'])
-
-          # --- Generar HTML con Pandas ---
-          html_template = """
+          # Generar HTML simple mostrando el contenido TXT directamente
+          html_template = f"""
           <!DOCTYPE html>
           <html lang="es">
           <head>
               <meta charset="UTF-8">
-              <title>Reporte Detallado Snyk</title>
+              <title>Snyk - Reporte de Vulnerabilidades</title>
               <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
               <style>
                   body {{ padding: 20px; font-family: Arial, sans-serif; }}
-                  h1, h2 {{ margin-bottom: 20px; }}
-                  table {{ width: 100%; margin-bottom: 30px; font-size: 0.9rem; }}
-                  th {{ background-color: #f2f2f2; }}
-                  .table-responsive {{ margin-bottom: 2rem; }}
-                  .badge-critical {{ background-color: #212529; color: white; }} /* Bootstrap dark */
-                  .badge-high {{ background-color: #dc3545; }} /* Bootstrap danger */
-                  .badge-medium {{ background-color: #ffc107; color: black;}} /* Bootstrap warning */
-                  .badge-low {{ background-color: #0dcaf0; }} /* Bootstrap info */
+                  .code-output {{ 
+                      background-color: #f8f9fa; 
+                      border: 1px solid #dee2e6; 
+                      border-radius: 0.375rem; 
+                      padding: 1rem; 
+                      font-family: 'Courier New', monospace; 
+                      white-space: pre-wrap; 
+                      overflow-x: auto; 
+                      font-size: 0.9rem;
+                      line-height: 1.4;
+                  }}
+                  .vulnerability-section {{ margin-bottom: 2rem; }}
+                  .badge-count {{ font-size: 1.2rem; }}
               </style>
           </head>
           <body>
               <div class="container-fluid">
-                  <h1>🛡️ Snyk - Reporte Detallado de Vulnerabilidades</h1>
-                  <p><a href="snyk-summary.html" class="btn btn-sm btn-outline-secondary">&laquo; Volver al Resumen</a> <a href="../../index.html" class="btn btn-sm btn-outline-primary">Volver al Dashboard Principal</a></p>
+                  <h1>🛡️ Snyk - Reporte de Vulnerabilidades</h1>
+                  <p>
+                      <a href="snyk-summary.html" class="btn btn-sm btn-outline-secondary">&laquo; Volver al Resumen</a> 
+                      <a href="../../index.html" class="btn btn-sm btn-outline-primary">Volver al Dashboard Principal</a>
+                  </p>
                   
-                  <h2>Vulnerabilidades en Dependencias ({{ dep_vuln_count }})</h2>
-                  {{% if dep_vuln_count > 0 %}}
-                  <div class="table-responsive">
-                      {{{{ deps_table_html | safe }}}}
+                  <div class="vulnerability-section">
+                      <h2>
+                          Vulnerabilidades en Dependencias 
+                          <span class="badge bg-{'danger' if dep_vuln_count > 0 else 'success'} badge-count">{dep_vuln_count}</span>
+                      </h2>
+                      <div class="code-output">{deps_html_content}</div>
                   </div>
-                  {{% else %}}
-                  <div class="alert alert-success">¡No se encontraron vulnerabilidades en dependencias!</div>
-                  {{% endif %}}
 
-                  <h2>Vulnerabilidades en Código ({{ code_vuln_count }})</h2>
-                  {{% if code_vuln_count > 0 %}}
-                  <div class="table-responsive">
-                      {{{{ code_table_html | safe }}}}
+                  <div class="vulnerability-section">
+                      <h2>
+                          Vulnerabilidades en Código 
+                          <span class="badge bg-{'danger' if code_vuln_count > 0 else 'success'} badge-count">{code_vuln_count}</span>
+                      </h2>
+                      <div class="code-output">{code_html_content}</div>
                   </div>
-                  {{% else %}}
-                  <div class="alert alert-success">¡No se encontraron vulnerabilidades en el código!</div>
-                  {{% endif %}}
+
+                  <div class="mt-4">
+                      <h3>Reportes Nativos de Snyk</h3>
+                      <div class="d-flex gap-2">
+                          <a href="snyk-dependencies-native-report.html" class="btn btn-outline-info btn-sm">Reporte HTML Dependencias</a>
+                          <a href="snyk-code-native-report.html" class="btn btn-outline-info btn-sm">Reporte HTML Código</a>
+                      </div>
+                  </div>
               </div>
           </body>
           </html>
           """
-          
-          def style_severity_row(row):
-              severity = row['Severidad'].lower() if 'Severidad' in row and row['Severidad'] else 'low'
-              return [f'class={{get_severity_class(severity)}}' for _ in row]
-
-          deps_table_html = df_deps.style.set_table_attributes('class="table table-striped table-bordered table-hover"') \
-                                      .set_caption(f"Total de vulnerabilidades en dependencias: {{len(df_deps)}}") \
-                                      .apply(style_severity_row, axis=1) \
-                                      .to_html(index=False, escape=False) if not df_deps.empty else "<p>No hay datos de dependencias.</p>"
-                                      
-          code_table_html = df_code.style.set_table_attributes('class="table table-striped table-bordered table-hover"') \
-                                      .set_caption(f"Total de vulnerabilidades en código: {{len(df_code)}}") \
-                                      .apply(style_severity_row, axis=1) \
-                                      .to_html(index=False, escape=False) if not df_code.empty else "<p>No hay datos de código.</p>"
-
-          final_html = html_template.replace("{{{{ deps_table_html | safe }}}}", deps_table_html) \
-                                    .replace("{{{{ code_table_html | safe }}}}", code_table_html) \
-                                    .replace("{{ dep_vuln_count }}", str(len(df_deps))) \
-                                    .replace("{{ code_vuln_count }}", str(len(df_code)))
 
           with open(output_html_path, 'w', encoding='utf-8') as f:
-              f.write(final_html)
-          print(f"Reporte HTML detallado de Snyk generado en: {output_html_path}")
+              f.write(html_template)
+          
+          print(f"Reporte HTML simple de Snyk generado en: {output_html_path}")
+          print(f"Vulnerabilidades en dependencias: {dep_vuln_count}")
+          print(f"Vulnerabilidades en código: {code_vuln_count}")
           PYCODE
 
       - name: Generate Snyk summary page (updated)
