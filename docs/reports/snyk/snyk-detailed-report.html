@@ -3,42 +3,195 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte Detallado Snyk</title>
+    <title>Snyk - Reporte de Vulnerabilidades</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {{ padding: 20px; font-family: Arial, sans-serif; }}
-        h1, h2 {{ margin-bottom: 20px; }}
-        table {{ width: 100%; margin-bottom: 30px; font-size: 0.9rem; }}
-        th {{ background-color: #f2f2f2; }}
-        .table-responsive {{ margin-bottom: 2rem; }}
-        .badge-critical {{ background-color: #212529; color: white; }} /* Bootstrap dark */
-        .badge-high {{ background-color: #dc3545; }} /* Bootstrap danger */
-        .badge-medium {{ background-color: #ffc107; color: black;}} /* Bootstrap warning */
-        .badge-low {{ background-color: #0dcaf0; }} /* Bootstrap info */
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .code-output { 
+            background-color: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 0.375rem; 
+            padding: 1rem; 
+            font-family: 'Courier New', monospace; 
+            white-space: pre-wrap; 
+            overflow-x: auto; 
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .vulnerability-section { margin-bottom: 2rem; }
+        .badge-count { font-size: 1.2rem; }
     </style>
 </head>
 <body>
     <div class="container-fluid">
-        <h1>🛡️ Snyk - Reporte Detallado de Vulnerabilidades</h1>
-        <p><a href="snyk-summary.html" class="btn btn-sm btn-outline-secondary">&laquo; Volver al Resumen</a> <a href="../../index.html" class="btn btn-sm btn-outline-primary">Volver al Dashboard Principal</a></p>
+        <h1>🛡️ Snyk - Reporte de Vulnerabilidades</h1>
+        <p>
+            <a href="snyk-summary.html" class="btn btn-sm btn-outline-secondary">&laquo; Volver al Resumen</a> 
+            <a href="../../index.html" class="btn btn-sm btn-outline-primary">Volver al Dashboard Principal</a>
+        </p>
         
-        <h2>Vulnerabilidades en Dependencias (0)</h2>
-        {{% if dep_vuln_count > 0 %}}
-        <div class="table-responsive">
-            <p>No hay datos de dependencias.</p>
-        </div>
-        {{% else %}}
-        <div class="alert alert-success">¡No se encontraron vulnerabilidades en dependencias!</div>
-        {{% endif %}}
+        <div class="vulnerability-section">
+            <h2>
+                Vulnerabilidades en Dependencias 
+                <span class="badge bg-danger badge-count">2</span>
+            </h2>
+            <div class="code-output">
+Testing /home/runner/work/doc_ai/doc_ai...
 
-        <h2>Vulnerabilidades en Código (0)</h2>
-        {{% if code_vuln_count > 0 %}}
-        <div class="table-responsive">
-            <p>No hay datos de código.</p>
+Tested 92 dependencies for known issues, found 1 issue, 1 vulnerable path.
+
+
+Issues to fix by upgrading:
+
+  Upgrade @supabase/supabase-js@2.49.8 to @supabase/supabase-js@2.50.0 to fix
+  ✗ Directory Traversal (new) [Medium Severity][https://security.snyk.io/vuln/SNYK-JS-SUPABASEAUTHJS-10255365] in @supabase/auth-js@2.69.1
+    introduced by @supabase/supabase-js@2.49.8 &gt; @supabase/auth-js@2.69.1
+
+
+
+Organization:      aa2022074261
+Package manager:   npm
+Target file:       package-lock.json
+Project name:      doc_ai
+Open source:       no
+Project path:      /home/runner/work/doc_ai/doc_ai
+Licenses:          enabled
+
+
+</div>
         </div>
-        {{% else %}}
-        <div class="alert alert-success">¡No se encontraron vulnerabilidades en el código!</div>
-        {{% endif %}}
+
+        <div class="vulnerability-section">
+            <h2>
+                Vulnerabilidades en Código 
+                <span class="badge bg-danger badge-count">1</span>
+            </h2>
+            <div class="code-output">
+Testing /home/runner/work/doc_ai/doc_ai ...
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/auth.routes.test.js, line 18 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user&#x27;s behalf.
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/proyectos.routes.test.js, line 12 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user&#x27;s behalf.
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/proyectos.routes.test.js, line 80 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user&#x27;s behalf.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/auth.routes.test.js, line 18 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 12 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 80 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 96 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Improper Type Validation 
+   Path: routes/auth.js, line 22 
+   Info: The type of this object, coming from body and the value of its length property can be controlled by the user. An attacker may craft the properties of the object to crash the application or bypass its logic. Consider checking the type of the object.
+
+ ✗ [Low] Improper Type Validation 
+   Path: routes/proyectos.js, line 27 
+   Info: The type of this object, coming from body and the value of its length property can be controlled by the user. An attacker may craft the properties of the object to crash the application or bypass its logic. Consider checking the type of the object.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 35 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 48 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 62 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 76 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 35 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 48 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 62 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 76 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/services/db.service.test.js, line 30 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in password.
+
+ ✗ [Medium] Cross-site Scripting (XSS) 
+   Path: public/js/auth.js, line 112 
+   Info: Unsanitized input from data from a remote resource flows into innerHTML, where it is used to dynamically construct the HTML page on client side. This may result in a DOM Based Cross-Site Scripting attack (DOMXSS).
+
+ ✗ [Medium] Cross-site Scripting (XSS) 
+   Path: public/js/main.js, line 112 
+   Info: Unsanitized input from data from a remote resource flows into innerHTML, where it is used to dynamically construct the HTML page on client side. This may result in a DOM Based Cross-Site Scripting attack (DOMXSS).
+
+ ✗ [Medium] Cross-site Scripting (XSS) 
+   Path: public/js/main.js, line 194 
+   Info: Unsanitized input from data from a remote resource flows into appendChild, where it is used to dynamically construct the HTML page on client side. This may result in a DOM Based Cross-Site Scripting attack (DOMXSS).
+
+ ✗ [Medium] Information Exposure 
+   Path: server.cjs, line 13 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Medium] Allocation of Resources Without Limits or Throttling 
+   Path: server.cjs, line 62 
+   Info: Expensive operation (a file system operation) is performed by an endpoint handler which does not use a rate-limiting mechanism. It may enable the attackers to perform Denial-of-service attacks. Consider using a rate-limiting middleware such as express-limit.
+
+ ✗ [Medium] Allocation of Resources Without Limits or Throttling 
+   Path: server.cjs, line 79 
+   Info: Expensive operation (a file system operation) is performed by an endpoint handler which does not use a rate-limiting mechanism. It may enable the attackers to perform Denial-of-service attacks. Consider using a rate-limiting middleware such as express-limit.
+
+ ✗ [Medium] Cross-Site Request Forgery (CSRF) 
+   Path: server.cjs, line 13 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user&#x27;s behalf.
+
+
+✔ Test completed
+
+Organization:      aa2022074261
+Test type:         Static code analysis
+Project path:      /home/runner/work/doc_ai/doc_ai
+
+Summary:
+
+  25 Code issues found
+  7 [Medium]   18 [Low] 
+
+
+</div>
+        </div>
+
+        <div class="mt-4">
+            <h3>Reportes Nativos de Snyk</h3>
+            <div class="d-flex gap-2">
+                <a href="snyk-dependencies-native-report.html" class="btn btn-outline-info btn-sm">Reporte HTML Dependencias</a>
+                <a href="snyk-code-native-report.html" class="btn btn-outline-info btn-sm">Reporte HTML Código</a>
+            </div>
+        </div>
     </div>
 </body>
 </html>
