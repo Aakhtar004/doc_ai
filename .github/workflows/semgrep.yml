@@ -174,3 +174,4 @@ jobs:
           branch: main
           commit_message: "ci: update Semgrep reports (JSON, SARIF, HTML table report, HTML summary)"
           file_pattern: docs/reports/semgrep/**
+          push_options: --force
