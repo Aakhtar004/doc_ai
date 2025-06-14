@@ -70,3 +70,4 @@ jobs:
           branch: main
           commit_message: "ci: update Semgrep report and summary"
           file_pattern: docs/reports/semgrep/**
+          push_options: '--force-with-lease'
