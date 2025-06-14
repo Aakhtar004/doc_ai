@@ -1,0 +1,23 @@
+
+Testing /home/runner/work/doc_ai/doc_ai...
+
+Tested 92 dependencies for known issues, found 1 issue, 1 vulnerable path.
+
+
+Issues to fix by upgrading:
+
+  Upgrade @supabase/supabase-js@2.49.8 to @supabase/supabase-js@2.50.0 to fix
+  ✗ Directory Traversal (new) [Medium Severity][https://security.snyk.io/vuln/SNYK-JS-SUPABASEAUTHJS-10255365] in @supabase/auth-js@2.69.1
+    introduced by @supabase/supabase-js@2.49.8 > @supabase/auth-js@2.69.1
+
+
+
+Organization:      aa2022074261
+Package manager:   npm
+Target file:       package-lock.json
+Project name:      doc_ai
+Open source:       no
+Project path:      /home/runner/work/doc_ai/doc_ai
+Licenses:          enabled
+
+

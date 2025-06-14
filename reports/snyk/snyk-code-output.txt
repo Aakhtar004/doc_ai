@@ -1,0 +1,116 @@
+
+Testing /home/runner/work/doc_ai/doc_ai ...
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/auth.routes.test.js, line 18 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user's behalf.
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/proyectos.routes.test.js, line 12 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user's behalf.
+
+ ✗ [Low] Cross-Site Request Forgery (CSRF) 
+   Path: tests/routes/proyectos.routes.test.js, line 80 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user's behalf.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/auth.routes.test.js, line 18 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 12 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 80 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Information Exposure 
+   Path: tests/routes/proyectos.routes.test.js, line 96 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Low] Improper Type Validation 
+   Path: routes/auth.js, line 22 
+   Info: The type of this object, coming from body and the value of its length property can be controlled by the user. An attacker may craft the properties of the object to crash the application or bypass its logic. Consider checking the type of the object.
+
+ ✗ [Low] Improper Type Validation 
+   Path: routes/proyectos.js, line 27 
+   Info: The type of this object, coming from body and the value of its length property can be controlled by the user. An attacker may craft the properties of the object to crash the application or bypass its logic. Consider checking the type of the object.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 35 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 48 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 62 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Credentials 
+   Path: tests/routes/auth.routes.test.js, line 76 
+   Info: Do not hardcode credentials in code. Found hardcoded credential used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 35 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 48 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 62 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/routes/auth.routes.test.js, line 76 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in send.
+
+ ✗ [Low] Use of Hardcoded Passwords 
+   Path: tests/services/db.service.test.js, line 30 
+   Info: Do not hardcode passwords in code. Found hardcoded password used in password.
+
+ ✗ [Medium] Cross-site Scripting (XSS) 
+   Path: public/js/auth.js, line 112 
+   Info: Unsanitized input from data from a remote resource flows into innerHTML, where it is used to dynamically construct the HTML page on client side. This may result in a DOM Based Cross-Site Scripting attack (DOMXSS).
+
+ ✗ [Medium] Cross-site Scripting (XSS) 
+   Path: public/js/main.js, line 112 
+   Info: Unsanitized input from data from a remote resource flows into innerHTML, where it is used to dynamically construct the HTML page on client side. This may result in a DOM Based Cross-Site Scripting attack (DOMXSS).
+
+ ✗ [Medium] Cross-site Scripting (XSS) 
+   Path: public/js/main.js, line 194 
+   Info: Unsanitized input from data from a remote resource flows into appendChild, where it is used to dynamically construct the HTML page on client side. This may result in a DOM Based Cross-Site Scripting attack (DOMXSS).
+
+ ✗ [Medium] Information Exposure 
+   Path: server.cjs, line 13 
+   Info: Disable X-Powered-By header for your Express app (consider using Helmet middleware), because it exposes information about the used framework to potential attackers.
+
+ ✗ [Medium] Allocation of Resources Without Limits or Throttling 
+   Path: server.cjs, line 62 
+   Info: Expensive operation (a file system operation) is performed by an endpoint handler which does not use a rate-limiting mechanism. It may enable the attackers to perform Denial-of-service attacks. Consider using a rate-limiting middleware such as express-limit.
+
+ ✗ [Medium] Allocation of Resources Without Limits or Throttling 
+   Path: server.cjs, line 79 
+   Info: Expensive operation (a file system operation) is performed by an endpoint handler which does not use a rate-limiting mechanism. It may enable the attackers to perform Denial-of-service attacks. Consider using a rate-limiting middleware such as express-limit.
+
+ ✗ [Medium] Cross-Site Request Forgery (CSRF) 
+   Path: server.cjs, line 13 
+   Info: CSRF protection is disabled for your Express app. This allows the attackers to execute requests on a user's behalf.
+
+
+✔ Test completed
+
+Organization:      aa2022074261
+Test type:         Static code analysis
+Project path:      /home/runner/work/doc_ai/doc_ai
+
+Summary:
+
+  25 Code issues found
+  7 [Medium]   18 [Low] 
+
+
