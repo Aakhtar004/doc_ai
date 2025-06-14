@@ -37,3 +37,4 @@ jobs:
           branch: main
           commit_message: "ci: update Mutation report"
           file_pattern: docs/reports/mutation/**
+          push_options: --force

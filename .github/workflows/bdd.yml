@@ -33,3 +33,4 @@ jobs:
           branch: main
           commit_message: "ci: update BDD report"
           file_pattern: docs/reports/bdd/**
+          push_options: --force

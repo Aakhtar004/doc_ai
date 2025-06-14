@@ -269,3 +269,4 @@ jobs:
           branch: main
           commit_message: "ci: update Snyk reports (HTMLs nativos, JSONs, HTML detallado parseado)"
           file_pattern: docs/reports/snyk/**
+          push_options: --force

@@ -53,3 +53,4 @@ jobs:
           branch: main
           commit_message: "ci: update Sonar report"
           file_pattern: docs/reports/sonar/**
+          push_options: --force
