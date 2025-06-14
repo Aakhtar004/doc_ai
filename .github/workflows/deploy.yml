@@ -7,20 +7,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write    # <-- permiso para push a la rama
+  contents: write
   pages: write
   id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -34,35 +30,81 @@ jobs:
           rm -f package-lock.json
           npm install
 
-      - name: Build application structure
+      - name: Prepare docs structure
         run: |
-          mkdir -p docs/reports/{semgrep,snyk,sonar,bdd,mutation}
+          mkdir -p docs/reports/semgrep \
+                   docs/reports/snyk \
+                   docs/reports/sonar \
+                   docs/reports/mutation \
+                   docs/reports/bdd
+
+      - name: Download Semgrep Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: semgrep-reports
+          path: temp-reports/semgrep
+
+      - name: Download Snyk Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: snyk-reports
+          path: temp-reports/snyk
+
+      - name: Download SonarCloud Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-reports
+          path: temp-reports/sonar
+
+      - name: Download Mutation Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: mutation-reports
+          path: temp-reports/mutation
+
+      - name: Download BDD Unit Report
+        uses: actions/download-artifact@v4
+        with:
+          name: bdd-unit-report
+          path: temp-reports/bdd/unit
+
+      - name: Download BDD Integration Report
+        uses: actions/download-artifact@v4
+        with:
+          name: bdd-integration-report
+          path: temp-reports/bdd/integration
+
+      - name: Download BDD UI Report
+        uses: actions/download-artifact@v4
+        with:
+          name: bdd-ui-report
+          path: temp-reports/bdd/ui
+
+      - name: Copy all reports into docs
+        run: |
+          cp -R temp-reports/semgrep/* docs/reports/semgrep/ || true
+          cp -R temp-reports/snyk/*    docs/reports/snyk/    || true
+          cp -R temp-reports/sonar/*   docs/reports/sonar/   || true
+          cp -R temp-reports/mutation/*docs/reports/mutation/|| true
+          cp -R temp-reports/bdd/*     docs/reports/bdd/     || true
 
       - name: Generate main dashboard markdown
         run: |
           cat > docs/index.md <<EOF
-          # 📊 DocAI - Dashboard de Reportes de Calidad
-
-          Bienvenido al dashboard centralizado de reportes de calidad para **DocAI**.
-
-          ## 🎯 Reportes Disponibles
-
-          ### 🛡️ Análisis de Seguridad
-          - [🔎 Semgrep - Análisis Estático](reports/semgrep/semgrep-summary.html)
-          - [🛡️ Snyk - Vulnerabilidades](reports/snyk/snyk-summary.html)
-
-          ### 📊 Calidad de Código
-          - [🎯 SonarCloud - Calidad](reports/sonar/sonar-summary.html)
-
-          ### 🧪 Testing
-          - [🧪 BDD & Coverage](reports/bdd/index.html)
-          - [🧬 Mutation Testing](reports/mutation/mutation-summary.html)
-
-          ## 🔗 Enlaces Útiles
-          - [Repositorio GitHub](https://github.com/Aakhtar004/doc_ai)
-          - [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=doc-ai-project)
-
           ---
+          layout: default
+          title: DocAI - Dashboard de Reportes
+          ---
+          
+          # 📊 DocAI - Dashboard de Reportes de Calidad
+          
+          ## 🎯 Reportes Disponibles
+          - 🛡️ [Semgrep](reports/semgrep/semgrep-summary.html)
+          - 🛡️ [Snyk](reports/snyk/snyk-summary.html)
+          - 🎯 [SonarCloud](reports/sonar/sonar-summary.html)
+          - 🧬 [Mutation Testing](reports/mutation/mutation-summary.html)
+          - 🧪 [BDD Tests](reports/bdd/index.html)
+          
           *Dashboard actualizado automáticamente por GitHub Actions*
           EOF
 
