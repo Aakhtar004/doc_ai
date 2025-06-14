@@ -36,7 +36,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Copy Semgrep results
         run: |
@@ -68,30 +69,15 @@ jobs:
           mkdir -p docs/reports/bdd
           cp ${{ needs.bdd.outputs.summary-path }} docs/reports/bdd/ || true
 
-      - name: Generate docs/index.md
-        run: |
-          cat > docs/index.md <<EOF
-          ---
-          layout: default
-          title: DocAI Dashboard
-          ---
-          # 📊 DocAI - Dashboard de Reportes
-          - 🔎 [Semgrep](reports/semgrep/semgrep-summary.html)
-          - 🛡️ [Snyk](reports/snyk/snyk-summary.html)
-          - 🎯 [SonarCloud](reports/sonar/sonar-summary.html)
-          - 🧬 [Mutation](reports/mutation/mutation-summary.html)
-          - 🧬 [Stryker](reports/mutation/mutation-summary.html)
-          - 🧪 [BDD](reports/bdd/index.html)
-          EOF
+      # Ya no generamos index.md, usamos el index.html existente en docs/index.html
 
-      - name: Disable Jekyll
+      - name: Disable Jekyll processing
         run: touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages    # rama destino
-          publish_dir: docs           # carpeta local que generas
-          destination_dir: docs       # carpeta dentro de gh-pages
-          force_orphan: true
+          publish_branch: gh-pages
+          publish_dir: docs
+          force_orphan:
