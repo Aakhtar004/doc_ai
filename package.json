@@ -1,11 +1,8 @@
 {
-  "name": "calidadproyecto",
+  "name": "doc_ai",
   "version": "1.0.0",
+  "description": "DocAI - Generador de documentación impulsado por IA",
   "main": "server.cjs",
-  "engines": {
-    "node": "18.x",
-    "npm": "10.x"
-  },
   "scripts": {
     "start": "node server.cjs",
     "test": "jest",
@@ -16,25 +13,26 @@
     "build": "echo 'Build completed'",
     "deploy": "echo 'Deploy to production'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Generador de documentación impulsado por IA",
   "dependencies": {
-    "@google/generative-ai": "^0.19.0",
-    "@supabase/supabase-js": "^2.49.8",
-    "cookie-parser": "^1.4.7",
-    "dotenv": "^16.4.5",
     "express": "^5.1.0",
-    "express-session": "^1.18.1"
+    "@google/generative-ai": "^0.19.0",
+    "express-session": "^1.18.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.5.0",
+    "@supabase/supabase-js": "^2.49.8",
+    "body-parser": "^2.2.0"
   },
   "devDependencies": {
+    "jest": "^30.0.0",
     "@cucumber/cucumber": "^11.3.0",
     "@stryker-mutator/core": "^8.0.0",
     "@stryker-mutator/jest-runner": "^8.0.0",
-    "eslint": "^9.28.0",
-    "jest": "^30.0.0"
+    "eslint": "^9.28.0"
   },
-  
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
   "homepage": "https://github.com/Aakhtar004/doc_ai"
 }
+

@@ -15,7 +15,7 @@ describe('Basic test setup for Doc AI', () => {
 
   test('should have correct project name in package.json', () => {
     const packageJson = require('../package.json');
-    expect(packageJson.name).toBe('calidadproyecto');
+    expect(packageJson.name).toBe('doc_ai');
   });
 
   test('should have required dependencies', () => {
@@ -29,13 +29,15 @@ describe('Basic test setup for Doc AI', () => {
     expect(packageJson.main).toBe('server.cjs');
   });
 
-  test('should verify gemini service exists', () => {
+  test('should verify basic file structure', () => {
     const fs = require('fs');
-    expect(fs.existsSync('services/gemini.js')).toBe(true);
+    expect(fs.existsSync('public')).toBe(true);
+    expect(fs.existsSync('public/js/main.js')).toBe(true);
   });
 
-  test('should verify auth routes exist', () => {
-    const fs = require('fs');
-    expect(fs.existsSync('routes/auth.js')).toBe(true);
+  test('should have working configuration', () => {
+    const packageJson = require('../package.json');
+    expect(packageJson.scripts).toHaveProperty('test');
+    expect(packageJson.scripts).toHaveProperty('start');
   });
 });

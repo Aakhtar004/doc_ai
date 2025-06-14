@@ -44,6 +44,8 @@ jobs:
 
           Bienvenido al dashboard centralizado de reportes de calidad para **DocAI**.
 
+          *Última actualización: $(date)*
+
           ## 🎯 Reportes Disponibles
 
           ### 🛡️ Análisis de Seguridad
@@ -54,12 +56,12 @@ jobs:
           - [🎯 SonarCloud - Calidad](reports/sonar/sonar-summary.html)
 
           ### 🧪 Testing
-          - [🧪 BDD & Coverage](reports/bdd/bdd-summary.html)
+          - [🧪 BDD & Coverage](reports/bdd/index.html)
           - [🧬 Mutation Testing](reports/mutation/mutation-summary.html)
 
           ## 🔗 Enlaces Útiles
           - [Repositorio GitHub](https://github.com/Aakhtar004/doc_ai)
-          - [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=doc-ai-sc_doc-ai-py)
+          - [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=doc-ai-project)
 
           ---
           *Dashboard actualizado automáticamente por GitHub Actions*
@@ -71,8 +73,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs
           force_orphan: true
-          .dashboard-header{background:linear-gradient(135deg,var(--primary),var(--success));min-height:50vh;display:flex;align-items:center}
-          .analysis-card{transition:all 0.3s ease;border:none;border-radius:20px;height:100%;box-shadow:0 4px 6px rgba(0,0,0,0.1)}
           .analysis-card:hover{transform:translateY(-8px);box-shadow:0 20px 25px rgba(0,0,0,0.1)}
           .card-semgrep{border-top:6px solid var(--danger)}.card-snyk{border-top:6px solid var(--info)}
           .card-sonar{border-top:6px solid var(--primary)}.card-stryker{border-top:6px solid var(--success)}
